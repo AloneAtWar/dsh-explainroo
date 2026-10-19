@@ -1,0 +1,14 @@
+node_modules/
+lib/
+.local/
+*.tgz
+coverage/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.cache/

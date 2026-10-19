@@ -1,0 +1,13 @@
+/.git/
+/.github/
+/.local/
+/node_modules/
+/src/
+/tests/
+/scripts/
+/AGENTS.md
+/coverage/
+*.tgz
+*.tsbuildinfo
+.env
+.env.*

@@ -1,0 +1,11 @@
+import { cp, mkdir, readdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
+const source = resolve(process.argv[2] ?? 'skills/explainroo/examples/password-storage-zh');
+const target = resolve('.local/projects', basename(source));
+if (existsSync(target)) throw new Error(`演示副本已存在，未覆盖：${target}`);
+if (!existsSync(join(source, 'video.json'))) throw new Error('请选择有效的 explainroo 项目。');
+await mkdir(target, { recursive: true });
+for (const file of await readdir(source)) if (!file.startsWith('.') && /\.(?:m?js|md|json)$/.test(file)) await cp(join(source, file), join(target, file));
+for (const folder of ['assets', 'build/voice']) if (existsSync(join(source, folder))) await cp(join(source, folder), join(target, folder), { recursive: true, dereference: true });
+console.log(`演示项目已复制到 ${target}，原项目保持原样。`);

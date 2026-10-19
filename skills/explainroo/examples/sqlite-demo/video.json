@@ -1,0 +1,17 @@
+{
+  "title": "SQLite",
+  "theme": "clean",
+  "size": "youtube",
+  "voice": "af_heart",
+  "music": true,
+  "captions": "auto",
+  "transition": "fade",
+  "pace": 1.1,
+  "brand": {
+    "accent": "#56b9ea",
+    "background": "#05222e",
+    "ink": "#eef6fa",
+    "font": "Inter",
+    "headline": "Instrument Serif"
+  }
+}

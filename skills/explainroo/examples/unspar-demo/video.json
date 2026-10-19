@@ -1,0 +1,21 @@
+{
+  "title": "Unspar",
+  "theme": "clean",
+  "size": "youtube",
+  "voice": "af_heart",
+  "music": true,
+  "captions": "auto",
+  "brand": {
+    "accent": "#245cff",
+    "background": "#f8f6f1",
+    "font": "Figtree",
+    "headline": "Instrument Serif",
+    "logo": "assets/unspar-logo.svg"
+  },
+  "fonts": [
+    { "family": "Figtree", "src": "assets/fonts/Figtree-400.woff2", "weight": 400 },
+    { "family": "Figtree", "src": "assets/fonts/Figtree-500.woff2", "weight": 500 },
+    { "family": "Figtree", "src": "assets/fonts/Figtree-600.woff2", "weight": 600 },
+    { "family": "Figtree", "src": "assets/fonts/Figtree-700.woff2", "weight": 700 }
+  ]
+}

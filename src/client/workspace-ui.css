@@ -1,0 +1,764 @@
+.er-workbench {
+  position: relative;
+  transition: background-color .15s,color .15s;
+}
+.er-workbench [hidden] {
+  display: none!important;
+}
+.er-editorSurface {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.er-workspaceEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  padding: 60px 24px;
+  text-align: center;
+}
+.er-workspaceEmpty h1 {
+  font-size: 23px;
+  margin: 6px 0;
+}
+.er-workspaceEmpty p {
+  color: var(--er-muted);
+  max-width: 440px;
+}
+.er-objectPicker>small {
+  color: var(--er-muted);
+  font-size: 10px;
+  display: block;
+  margin: 4px 0;
+}
+.er-objectList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 170px;
+  overflow: auto;
+  margin-top: 8px;
+}
+.er-objectList>button {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 2px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: transparent;
+  min-width: 0;
+}
+.er-objectList>button>span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.er-objectList>button>small {
+  font-size: 10px;
+  color: var(--er-muted);
+  overflow-wrap: anywhere;
+}
+.er-objectList>button:hover {
+  background: var(--er-input);
+}
+.er-objectList>button.is-selected {
+  border-color: var(--er-amber);
+  background: var(--er-input);
+}
+.er-contextMenu {
+  position: absolute;
+  z-index: 100;
+  width: 260px;
+  padding: 5px;
+  border: 1px solid var(--er-border);
+  border-radius: 7px;
+  background: var(--er-panel);
+  box-shadow: 0 8px 28px #0003;
+  animation: er-menuIn .12s ease-out;
+}
+.er-contextMenu>button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  padding: 10px 11px;
+}
+.er-contextMenu>button:hover,.er-contextMenu>button:focus-visible {
+  background: var(--er-input);
+}
+.er-copyFallback {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: #0005;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.er-copyFallback>div {
+  width: min(620px,100%);
+  padding: 24px;
+  background: var(--er-panel);
+  border: 1px solid var(--er-border);
+  border-radius: 9px;
+}
+.er-copyFallback textarea {
+  width: 100%;
+  height: 280px;
+  margin: 12px 0;
+}
+.er-workbench[data-ui-theme=light] {
+  --er-bg: #f5f7fb;
+  --er-panel: #fff;
+  --er-input: #f0f3f8;
+  --er-border: #d9e0e9;
+  --er-text: #1c2a3c;
+  --er-muted: #596b80;
+  --er-amber: #9c5900;
+  --er-cyan: #087780;
+  color-scheme: light;
+}
+.er-workbench[data-ui-theme=light] .er-brand svg {
+  color: #a96309;
+}
+.er-workbench[data-ui-theme=light] .er-button {
+  background: #fff;
+  border-color: #c7d1de;
+  box-shadow: 0 1px 2px #26395008;
+}
+.er-workbench[data-ui-theme=light] .er-primary {
+  background: #f4b543;
+  border-color: #dfa12e;
+  color: #2c1c00!important;
+}
+.er-workbench[data-ui-theme=light] .er-quiet {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+}
+.er-workbench[data-ui-theme=light] .er-scene.is-selected {
+  background: #fff4dd;
+  border-color: #ba7a1e;
+}
+.er-workbench[data-ui-theme=light] .er-thumb {
+  background: #e9eef5;
+  border-color: #cbd5e2;
+}
+.er-workbench[data-ui-theme=light] .er-stage {
+  background: #e6ebf3;
+  border-color: #ccd6e4;
+}
+.er-workbench[data-ui-theme=light] .er-track>span,.er-workbench[data-ui-theme=light] .er-timelineFooter {
+  color: #596b80;
+}
+.er-workbench[data-ui-theme=light] .er-visualClips>button {
+  color: #513c82;
+  background: #e9e0fa;
+  border-color: #c8b6ea;
+}
+@keyframes er-menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  .er-workbench * {
+    animation: none!important;
+    transition: none!important;
+  }
+}
+@container(max-width:470px) {
+  .er-topbar {
+    gap: 8px;
+  }
+}
+.er-workbench[data-ui-theme=light] .er-appearance {
+  background: #fff;
+  color: var(--er-text);
+}
+.er-projectTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 260px;
+  min-width: 120px;
+  border: 1px solid var(--er-border);
+  border-radius: 5px;
+  background: var(--er-input);
+  color: var(--er-text);
+  padding: 7px 10px;
+}
+.er-projectTrigger>span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.er-projectTrigger>svg {
+  flex-shrink: 0;
+}
+.er-projectOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: #0005;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(16px,8vh,64px) 16px;
+}
+.er-projectDialog {
+  width: min(560px,100%);
+  max-height: 80dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--er-panel);
+  border: 1px solid var(--er-border);
+  border-radius: 10px;
+  box-shadow: 0 14px 60px #0004;
+  animation: er-menuIn .14s ease-out;
+  overflow: hidden;
+}
+.er-projectDialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+}
+.er-projectDialog h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.er-projectSearch {
+  display: flex;
+  flex-direction: row!important;
+  align-items: center;
+  gap: 8px;
+  margin: 0 20px 12px;
+  padding: 0 10px;
+  border: 1px solid var(--er-border);
+  border-radius: 5px;
+  background: var(--er-input);
+}
+.er-projectSearch input {
+  border: 0!important;
+  flex: 1;
+  min-width: 0;
+  background: transparent!important;
+}
+.er-projectResults {
+  padding: 0 10px 10px;
+  overflow: auto;
+  min-height: 100px;
+}
+.er-projectResults>p {
+  padding: 20px;
+  color: var(--er-muted);
+  text-align: center;
+}
+.er-projectRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 10px;
+  text-align: left;
+  background: transparent;
+  color: var(--er-text);
+  border: 1px solid transparent;
+  border-radius: 5px;
+  transition: background .12s;
+}
+.er-projectRow:hover {
+  background: var(--er-input);
+}
+.er-projectRow.is-selected {
+  background: var(--er-input);
+  border-color: var(--er-border);
+}
+.er-projectRow>span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.er-projectRow strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.er-projectRow small {
+  font-size: 11px;
+  color: var(--er-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.er-projectRow>svg {
+  flex-shrink: 0;
+  color: var(--er-amber);
+}
+.er-projectDialog footer {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--er-border);
+}
+.er-projectDialog footer small {
+  font-size: 11px;
+  color: var(--er-muted);
+}
+@container(max-width:730px) {
+  .er-projectTrigger {
+    max-width: 200px;
+  }
+  .er-projectDialog footer {
+    flex-wrap: wrap;
+  }
+}
+.er-toast {
+  position: fixed;
+  z-index: 140;
+  top: 14px;
+  right: 16px;
+  max-width: min(420px,calc(100% - 32px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--er-border);
+  border-radius: 7px;
+  background: var(--er-panel);
+  color: var(--er-text);
+  box-shadow: 0 5px 24px #0003;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  animation: er-menuIn .12s ease-out;
+}
+.er-toast .er-icon {
+  width: 23px;
+  height: 23px;
+}
+.er-toastError {
+  border-color: #bc4a60;
+  color: #e68596;
+}
+.er-workbench[data-ui-theme=light] .er-toastError {
+  color: #a32942;
+}
+.er-startStory {
+  display: flex;
+  justify-content: center;
+}
+.er-settingsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: #0006;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(14px,6vh,54px) 16px;
+}
+.er-settingsDialog {
+  width: min(600px,100%);
+  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--er-panel);
+  border: 1px solid var(--er-border);
+  border-radius: 10px;
+  box-shadow: 0 16px 60px #0004;
+  animation: er-menuIn .14s ease-out;
+}
+.er-settingsDialog>header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--er-border);
+}
+.er-settingsDialog h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.er-settingsTabs {
+  display: flex;
+  gap: 18px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--er-border);
+  flex: none;
+}
+.er-settingsTabs>button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 13px 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--er-muted);
+}
+.er-settingsTabs>button[aria-selected=true] {
+  color: var(--er-text);
+  border-color: var(--er-amber);
+  font-weight: 600;
+}
+.er-settingsBody {
+  min-height: 220px;
+  overflow: auto;
+  padding: 22px 24px;
+}
+.er-settingsBody fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.er-settingsBody label {
+  font-size: 12px;
+  gap: 8px;
+}
+.er-settingsBody input,.er-settingsBody select,.er-settingsBody textarea {
+  width: 100%;
+  font-size: 13px;
+  padding: 9px 11px;
+}
+.er-settingsBody .er-pathField input {
+  flex: 1;
+  min-width: 0;
+}
+.er-settingsBody details {
+  border-top: 1px solid var(--er-border);
+  padding-top: 15px;
+  color: var(--er-muted);
+  font-size: 12px;
+}
+.er-settingsBody details summary {
+  cursor: pointer;
+}
+.er-settingsBody details label {
+  margin-top: 16px;
+}
+.er-settingsBody textarea {
+  height: 80px;
+  max-height: 180px;
+}
+.er-settingsProject {
+  font-size: 12px;
+  color: var(--er-muted);
+  overflow-wrap: anywhere;
+}
+.er-settingsDialog>footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--er-border);
+  flex: none;
+}
+.er-settingsError {
+  color: #c84c65;
+  margin-top: 14px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.er-exportProgress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  min-width: 0;
+  white-space: nowrap;
+  color: var(--er-muted);
+}
+.er-exportProgress progress {
+  width: 70px;
+  height: 6px;
+  accent-color: var(--er-amber);
+}
+.er-exportProgress strong {
+  font-variant-numeric: tabular-nums;
+  min-width: 29px;
+}
+.er-scriptEditor {
+  height: 154px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.er-scriptEditor .er-sectionTitle {
+  flex: none;
+}
+.er-scriptEditor textarea {
+  flex: 1;
+  min-height: 0;
+  height: 110px;
+  max-height: 110px;
+  resize: none;
+  overflow: auto;
+}
+.er-workbench .er-scriptEditor>textarea {
+  margin: 0;
+}
+.er-scriptEditor>textarea,.er-scriptEditor>p {
+  min-width: 0;
+}
+@container(max-width:800px) {
+  .er-exportProgress progress {
+    width: 42px;
+  }
+  .er-topbar {
+    gap: 9px;
+  }
+  .er-settingsBody {
+    padding: 18px;
+  }
+  .er-topActions {
+    flex-wrap: wrap;
+  }
+}
+.er-exportStatusSlot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 180px;
+  min-height: 30px;
+  flex-shrink: 0;
+}
+.er-exportProgress progress {
+  width: 44px;
+}
+@container(max-width:600px) {
+  .er-exportStatusSlot {
+    width: 160px;
+  }
+}
+.er-narrationShell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.er-narrationEditor {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.er-narrationHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+}
+.er-narrationHeading small {
+  font-size: 10px;
+  color: var(--er-muted);
+}
+.er-narrationHeading button {
+  font-size: 10px;
+  border: 0;
+  background: transparent;
+  padding: 2px 4px;
+  color: var(--er-text);
+  white-space: nowrap;
+}
+.er-narrationHeading button:hover {
+  color: var(--er-amber);
+}
+.er-workbench .er-scriptEditor .er-narrationEditor textarea {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  max-height: none;
+  height: auto;
+  resize: none;
+  line-height: 1.7;
+  overflow: auto;
+  padding: 6px 8px;
+}
+.er-narrationBackdrop {
+  position: fixed;
+  inset: 0;
+  background: #0006;
+  z-index: 119;
+}
+.er-narrationShell.is-expanded .er-narrationEditor {
+  position: fixed;
+  z-index: 120;
+  inset: 10dvh max(20px,12vw);
+  height: 75dvh;
+  background: var(--er-panel);
+  border: 1px solid var(--er-border);
+  border-radius: 9px;
+  box-shadow: 0 16px 60px #0004;
+  padding: 18px;
+  gap: 12px;
+}
+.er-narrationShell.is-expanded .er-narrationHeading small {
+  font-size: 13px;
+}
+.er-narrationShell.is-expanded .er-narrationHeading button {
+  font-size: 12px;
+}
+.er-narrationEditor footer {
+  display: flex;
+  justify-content: flex-end;
+  flex: none;
+}
+.er-renameScene {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--er-border);
+  background: var(--er-panel);
+  color: var(--er-text);
+  border-radius: 4px;
+  padding: 5px 7px;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.er-renameScene:hover {
+  border-color: var(--er-amber);
+}
+.er-renameDialog {
+  width: min(420px,100%);
+}
+.er-renameDialog .er-settingsBody {
+  min-height: 100px;
+}
+.er-canvasToolbar>strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.er-canvasToolbar>.er-icon {
+  flex-shrink: 0;
+}
+.er-inlineNarrationMount {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  position: relative;
+}
+.er-inlineNarration {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--er-input);
+  border: 1px solid var(--er-border);
+  border-radius: 5px;
+  padding: 7px 9px;
+  font-size: 12px;
+  line-height: 2.1;
+  outline: none;
+  font-variant-ligatures: none;
+}
+.er-inlineNarration:focus {
+  border-color: var(--er-amber);
+  box-shadow: 0 0 0 1px var(--er-amber);
+}
+.er-inlineNarration[aria-disabled=true] {
+  opacity: .65;
+}
+.er-inlineCue {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: baseline;
+  gap: 3px;
+  max-width: 100%;
+  margin: 0 3px;
+  padding: 0 5px;
+  line-height: 1.65;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--er-amber);
+  border-radius: 4px;
+  background: var(--er-panel);
+  color: var(--er-amber);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.er-inlineCue>span:last-child {
+  overflow-wrap: anywhere;
+}
+.er-cueGrip {
+  opacity: .65;
+  font-size: 12px;
+  font-weight: 400;
+}
+.er-inlineCue:hover,.er-inlineCue:focus-visible,.er-inlineCue.ProseMirror-selectednode {
+  outline: 2px solid var(--er-amber);
+  outline-offset: 1px;
+}
+.er-inlineCue.is-dragging {
+  opacity: .4;
+  cursor: grabbing;
+}
+.er-inlineCue[aria-disabled=true] {
+  cursor: default;
+}
+.er-workbench[data-ui-theme=light] .er-inlineCue {
+  background: #fff5dc;
+  color: #875600;
+  border-color: #d6aa51;
+}
+.er-narrationShell.is-expanded .er-inlineNarration {
+  font-size: 15px;
+  padding: 15px 17px;
+  line-height: 2.2;
+}
+.er-narrationShell.is-expanded .er-inlineCue {
+  font-size: 12px;
+}
+.er-contextMenu {
+  z-index: 135;
+}
+.er-copyFallback {
+  z-index: 136;
+}
+.er-inlineCue {
+  touch-action: none;
+}
+.er-cueDropCaret {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  width: 3px;
+  background: var(--er-amber);
+  border-radius: 2px;
+}
