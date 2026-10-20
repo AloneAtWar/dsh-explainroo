@@ -503,7 +503,7 @@
   min-width: 29px;
 }
 .er-scriptEditor {
-  height: 154px;
+  height: 212px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -512,19 +512,33 @@
 .er-scriptEditor .er-sectionTitle {
   flex: none;
 }
-.er-scriptEditor textarea {
-  flex: 1;
+.er-scriptHeading {
+  font-size: 12px;
+  font-weight: 600;
+}
+.er-noteField {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 7px;
+  min-width: 0;
+}
+.er-noteLabel {
+  font-size: 10px;
+  color: var(--er-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.er-noteField textarea {
+  width: 100%;
+  height: 44px;
   min-height: 0;
-  height: 110px;
-  max-height: 110px;
   resize: none;
   overflow: auto;
-}
-.er-workbench .er-scriptEditor>textarea {
-  margin: 0;
-}
-.er-scriptEditor>textarea,.er-scriptEditor>p {
-  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
 }
 @container(max-width:800px) {
   .er-exportProgress progress {
@@ -591,18 +605,6 @@
 .er-narrationHeading button:hover {
   color: var(--er-amber);
 }
-.er-workbench .er-scriptEditor .er-narrationEditor textarea {
-  flex: 1;
-  width: 100%;
-  min-width: 0;
-  min-height: 30px;
-  max-height: none;
-  height: auto;
-  resize: none;
-  line-height: 1.7;
-  overflow: auto;
-  padding: 6px 8px;
-}
 .er-narrationBackdrop {
   position: fixed;
   inset: 0;
@@ -631,22 +633,6 @@
   display: flex;
   justify-content: flex-end;
   flex: none;
-}
-.er-renameScene {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border: 1px solid var(--er-border);
-  background: var(--er-panel);
-  color: var(--er-text);
-  border-radius: 4px;
-  padding: 5px 7px;
-  font-size: 11px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.er-renameScene:hover {
-  border-color: var(--er-amber);
 }
 .er-renameDialog {
   width: min(420px,100%);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Clapperboard, Copy, Download, FolderOpen, Image, LockKeyhole, MessageSquare, Moon, Pause, Pencil, Play, Rabbit, Redo2, RefreshCw, Save, Settings2, Sun, Undo2, UnlockKeyhole, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clapperboard, Copy, Download, FolderOpen, Image, LockKeyhole, MessageSquare, Moon, Pause, Pencil, Play, Rabbit, Redo2, RefreshCw, Save, Settings2, Sun, Undo2, X } from 'lucide-react';
 import type { Appearance, EditableElement, ElementPatch, NewProjectRequest, ProjectDetail, SetupInfo, TaskAction, TaskInfo, WorkbenchApi } from '../shared/types.ts';
 import type { SceneSelection } from './scene-references.ts';
 import { themes, textures } from '../shared/types.ts';
@@ -43,7 +43,6 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; text: string; label: string; sceneId: string; kind: ReferenceKind | 'marker'; marker?: string } | null>(null);
   const [copyFallback, setCopyFallback] = useState(''); const workbenchRoot = useRef<HTMLElement>(null); const menuRoot = useRef<HTMLDivElement>(null);
   const [openingConversation, setOpeningConversation] = useState(false);
-  const [editorTab, setEditorTab] = useState<'narration' | 'note'>('narration');
   const [backgroundColor, setBackgroundColor] = useState('#0b1020');
   const iframe = useRef<HTMLIFrameElement>(null);
   const channel = useRef(crypto.randomUUID());
@@ -197,11 +196,6 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
     send('state', studio);
   }
   function discard() { if (!project || !scene) return; setRaw(scene.raw); setNote(edit?.note ?? ''); setEditorEpoch(value => value + 1); setElementPatch({}); send('state', project.studio); }
-  async function toggleLock() {
-    if (!project || !scene || dirty) { if (dirty) setError(t('dirtyHint')); return; } setSaving(true);
-    try { accept(await api.save({ id: project.id, sceneId: scene.id, revision: project.revision, locked: !edit?.locked, origin: 'user' })); }
-    catch (cause) { setError(message(cause)); } finally { setSaving(false); }
-  }
   async function undo(direction: 'undo' | 'redo') {
     if (!project || dirty) { if (dirty) setError(t('dirtyHint')); return; } setSaving(true);
     try { accept(await api.history({ id: project.id, revision: project.revision, direction })); } catch (cause) { setError(message(cause)); } finally { setSaving(false); }
@@ -250,10 +244,9 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
   const elementValue = <K extends keyof ElementPatch>(key: K, fallback: any) => elementPatch[key] ?? fallback;
   function beginRename(kind: 'scene' | 'marker', from: string, sceneId = selectedScene) { if (!project || !project.scenes.some(item => item.id === sceneId) || busy || dirty || project.studio.scenes[sceneId]?.locked) { if (dirty) setError(t('dirtyHint')); return; } if (frame.playing) send('play'); setRenaming({kind, from, sceneId, revision: project.revision, projectId: project.id}); }
 
-  function startProject() { setEditorTab('narration'); if (!setup?.folderState) { setSettings(true); return; } setNewTitle(''); setNewDirectory(`video-${Date.now().toString(36)}`); setLibraryPath(setup?.libraryRoot ?? ''); setError(''); setNotice(''); setCreating(true); setSettings(false); }
+  function startProject() { if (!setup?.folderState) { setSettings(true); return; } setNewTitle(''); setNewDirectory(`video-${Date.now().toString(36)}`); setLibraryPath(setup?.libraryRoot ?? ''); setError(''); setNotice(''); setCreating(true); setSettings(false); }
   async function saveExport(task: TaskInfo) { const value = await api.download({ taskId: task.id }); const link = document.createElement('a'); link.href = value.url; link.download = value.filename; document.body.appendChild(link); link.click(); link.remove(); }
   useEffect(() => { for (const task of tasks) { if (!pendingExports.current.has(task.id) || handledExports.current.has(task.id) || task.status === 'running') continue; handledExports.current.add(task.id); pendingExports.current.delete(task.id); if (task.status === 'completed') { setReadyExport(task); void saveExport(task).catch(cause => setError(message(cause).split('\n')[0].slice(0, 160))); } else if (task.status === 'failed') setError((task.error ?? t('exportFailed')).split('\n')[0].slice(0, 160)); } }, [tasks]);
-  const editorTabs = <div className="er-editorTabs" role="tablist" aria-label={t('script')}>{(['narration', 'note'] as const).map(tab => <button key={tab} role="tab" aria-selected={editorTab === tab} title={t(tab === 'note' ? 'noteHint' : 'narrationHint')} onClick={() => setEditorTab(tab)}>{t(tab)}</button>)}</div>;
   return <section ref={workbenchRoot} className="er-workbench" data-ui-theme={uiTheme} aria-label={t('title')}>
     <header className="er-topbar">
       <div className="er-brand"><Rabbit size={25}/><strong>explainroo</strong></div>
@@ -265,7 +258,7 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
         <button className="er-icon" aria-label={t('redo')} disabled={settings || busy || !project?.canRedo || dirty} onClick={() => void undo('redo')}><Redo2 size={17}/></button>
         <button className="er-icon" aria-label={t('refresh')} disabled={settings || busy || !project} onClick={() => project && void load(project.id)}><RefreshCw size={17}/></button>
         <button className="er-icon" aria-label={t(uiTheme === 'light' ? 'darkMode' : 'lightMode')} title={t(uiTheme === 'light' ? 'darkMode' : 'lightMode')} onClick={toggleUiTheme}>{uiTheme === 'light' ? <Moon size={17}/> : <Sun size={17}/>}</button>
-        <button className="er-icon" aria-label={t('settings')} onClick={() => { setEditorTab('narration'); setCreating(false); setLibraryPath(setup?.libraryRoot ?? libraryPath); setSettings(!settings); }}><Settings2 size={17}/></button>
+        <button className="er-icon" aria-label={t('settings')} onClick={() => { setCreating(false); setLibraryPath(setup?.libraryRoot ?? libraryPath); setSettings(!settings); }}><Settings2 size={17}/></button>
         <div className="er-exportStatusSlot">{(displayTask || startingExport) && <div className="er-exportProgress" role="status"><span>{t(displayTask?.phase === 'voice' ? 'voiceProgress' : displayTask?.phase === 'sheet' ? 'sheetProgress' : displayTask?.phase === 'render' ? 'renderProgress' : 'preparingExport')}</span><progress max="100" value={displayTask?.progress ?? 0}/><strong>{displayTask?.progress ?? 0}%</strong>{displayTask && <button className="er-icon" aria-label={t('cancel')} onClick={() => void api.cancel({taskId: displayTask.id}).then(refreshTasks)}><X size={13}/></button>}</div>}
         {!displayTask && readyExport?.projectFolder === project?.folder && readyExport && <button className="er-button er-small" onClick={() => void saveExport(readyExport).catch(cause => setError(message(cause)))}>{t('saveExport')}</button>}</div>
         <button className="er-button" disabled={creating || !project?.sceneCount || busy || dirty} onClick={() => void run('sheet')}><Image size={16}/>{t('sheet')}</button>
@@ -306,12 +299,14 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
           </button>)}</div>
         </aside>
         <main className="er-main">
-          <div className="er-canvasToolbar" onContextMenu={event => context(event, scene.id, 'visual')}><strong>{String(scene.index + 1).padStart(2, '0')} · {scene.id}</strong><button className="er-renameScene" disabled={busy || dirty || !!edit?.locked} onClick={() => beginRename('scene', scene.id)}><Pencil size={13}/>{t('renameScene')}</button><span className={scene.cached ? 'er-cached' : 'er-estimated'}>{t(scene.cached ? 'cached' : 'estimated')}</span><button className="er-button er-small" aria-label={t(edit?.locked ? 'unlock' : 'lock')} disabled={busy} onClick={() => void toggleLock()}>{edit?.locked ? <LockKeyhole size={13}/> : <UnlockKeyhole size={13}/>}<span>{t(edit?.locked ? 'unlock' : 'lock')}</span></button></div>
+          <div className="er-canvasToolbar" onContextMenu={event => context(event, scene.id, 'visual')}><strong>{String(scene.index + 1).padStart(2, '0')} · {scene.id}</strong><span className={scene.cached ? 'er-cached' : 'er-estimated'}>{t(scene.cached ? 'cached' : 'estimated')}</span></div>
           <div className="er-stage" onContextMenu={event => context(event, scene.id, 'visual')}><iframe ref={iframe} title="explainroo scene preview" src={`${project.previewUrl}?channel=${channel.current}`} allow="autoplay"/></div>
           <div className="er-playbar"><button className="er-icon" aria-label={t('previous')} disabled={scene.index === 0 || dirty} onClick={() => chooseScene(project.scenes[scene.index - 1].id)}><ArrowLeft size={17}/></button><button className="er-icon er-play" aria-label={t(frame.playing ? 'pause' : 'play')} disabled={dirty} onClick={() => send('play')}>{frame.playing ? <Pause size={22}/> : <Play size={22}/>}</button><button className="er-icon" aria-label={t('next')} disabled={scene.index === project.scenes.length - 1 || dirty} onClick={() => chooseScene(project.scenes[scene.index + 1].id)}><ArrowRight size={17}/></button><span className="er-clock">{formatTime(frame.time)} / {formatTime(project.duration)}</span><span className="er-dimensions">{project.width} × {project.height} · {project.fps} fps</span></div>
-          <section className="er-scriptEditor"><div className="er-sectionTitle">{editorTabs}{edit?.locked && <LockKeyhole size={12}/>}</div>
-            <textarea hidden={editorTab !== 'note'} aria-label={t('note')} value={note} disabled={!!edit?.locked || busy} onChange={event => setNote(event.target.value)} placeholder={t('notePlaceholder')}/>
-            <NarrationEditor key={`${project.folder}:${scene.id}:${editorEpoch}`} value={raw} hidden={editorTab !== 'narration'} disabled={!!edit?.locked || busy} canSave={dirty} renaming={!!renaming} save={() => void save()} change={value => { if (frame.playing && !dirty) send('play'); setRaw(value); }} seek={name => { if (!dirty) send('seek', scene.start + (scene.marks[name] ?? 0) + 0.05); }} context={markerContext} t={t}/>
+          <section className="er-scriptEditor"><div className="er-sectionTitle"><strong className="er-scriptHeading" title={t('narrationHint')}>{t('narration')}</strong>{edit?.locked && <LockKeyhole size={12}/>}</div>
+            <NarrationEditor key={`${project.folder}:${scene.id}:${editorEpoch}`} value={raw} hidden={false} disabled={!!edit?.locked || busy} canSave={dirty} renaming={!!renaming} save={() => void save()} change={value => { if (frame.playing && !dirty) send('play'); setRaw(value); }} seek={name => { if (!dirty) send('seek', scene.start + (scene.marks[name] ?? 0) + 0.05); }} context={markerContext} t={t}/>
+            <div className="er-noteField"><span className="er-noteLabel" title={t('noteHint')}>{t('note')}</span>
+              <textarea className="er-noteInput" aria-label={t('note')} value={note} disabled={!!edit?.locked || busy} onChange={event => setNote(event.target.value)} placeholder={t('notePlaceholder')}/>
+            </div>
           </section>
           <section className="er-timeline" aria-label={t('audio')}>
             <div className="er-ruler"><span>{formatTime(scene.start)}</span><span>{formatTime(scene.start + scene.duration / 2)}</span><span>{formatTime(scene.start + scene.duration)}</span></div>

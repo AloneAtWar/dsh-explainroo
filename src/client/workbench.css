@@ -268,9 +268,6 @@
 .er-canvasToolbar>strong {
   font-size: 14px;
 }
-.er-canvasToolbar>.er-button {
-  margin-left: auto;
-}
 .er-cached,.er-estimated {
   font-size: 10px;
   color: var(--er-muted);
@@ -334,11 +331,10 @@
 .er-sectionTitle>.er-icon {
   margin-left: auto;
 }
-.er-scriptEditor textarea {
+.er-scriptEditor .er-noteInput {
   width: 100%;
   font-size: 12px;
   line-height: 1.7;
-  min-height: 82px;
 }
 .er-timeline {
   padding: 8px 9px;
@@ -632,9 +628,6 @@
   .er-cached,.er-estimated {
     font-size: 9px;
   }
-  .er-canvasToolbar>.er-button span {
-    display: none;
-  }
   .er-canvasToolbar>strong {
     font-size: 12px;
   }
@@ -756,22 +749,6 @@
 }
 .er-captionToggle input {
   accent-color: var(--er-amber);
-}
-.er-editorTabs {
-  display: flex;
-  gap: 12px;
-}
-.er-editorTabs button {
-  background: transparent;
-  border: 0;
-  padding: 2px 0;
-  color: var(--er-muted);
-  font-size: 11px;
-  border-bottom: 2px solid transparent;
-}
-.er-editorTabs button[aria-selected=true] {
-  color: var(--er-text);
-  border-bottom-color: var(--er-amber);
 }
 .er-emptyWorkspace {
   display: grid;
