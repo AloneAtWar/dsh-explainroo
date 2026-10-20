@@ -25,13 +25,15 @@
 
 ## 安装到 DSH Desktop
 
+已发布版本可直接从 [GitHub Releases](https://github.com/AloneAtWar/dsh-explainroo/releases) 下载 `dsh-explainroo.tgz`，无需本地构建；也可从源码构建：
+
 ```powershell
 npm ci --ignore-scripts
 npm run check
 npm pack
 ```
 
-通过 DSH Desktop 支持本地文件的插件安装入口选择 `dsh-explainroo-0.7.2.tgz`，再重启 Harness，在工作台主页打开「讲解视频工作台」。使用 CLI 时应使用当前 Desktop 自带的运行时与 profile；全局 Harness CLI 可能安装到其他位置。
+通过 DSH Desktop 支持本地文件的插件安装入口选择下载或构建得到的 tgz（Release 为固定文件名 `dsh-explainroo.tgz`，本地构建为 `dsh-explainroo-<版本>.tgz`），再重启 Harness，在工作台主页打开「讲解视频工作台」。使用 CLI 时应使用当前 Desktop 自带的运行时与 profile；全局 Harness CLI 可能安装到其他位置。
 
 首次进入设置工作台路径。默认使用包内引擎，只有需要自定义引擎时才填写高级设置中的引擎目录。
 
@@ -64,7 +66,7 @@ npm run check
 npm pack --dry-run --ignore-scripts
 ```
 
-CI 配置为在 Windows 和 Linux 上执行完整检查与打包预检。TypeScript 同时检查未使用的声明。
+CI 在 Windows 和 Linux 的 Node 22 / 24 上执行完整检查与打包预检。TypeScript 同时检查未使用的声明。推送 `v*` 标签会重复完整检查后创建 GitHub Release，附上固定文件名的 `dsh-explainroo.tgz`（供 `releases/latest/download/` 链接引用）并通过 8 MiB 体积守卫；配置 `NPM_TOKEN` secret 后，Release 发布时自动执行 `npm publish --provenance`。
 
 ## DSH 工具
 

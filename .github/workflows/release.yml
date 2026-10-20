@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm pack --ignore-scripts
+      - name: Enforce workbench market package size limit (8 MiB)
+        run: |
+          size=$(stat -c %s dsh-explainroo-*.tgz)
+          limit=$((8 * 1024 * 1024))
+          echo "packed size: ${size} bytes (limit ${limit})"
+          test "$size" -le "$limit"
+      # 市场规范要求 releases/latest/download/ 链接使用无版本文件名
+      - name: Rename tarball to version-free filename
+        run: cp dsh-explainroo-*.tgz dsh-explainroo.tgz
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dsh-explainroo.tgz --title "$GITHUB_REF_NAME" --generate-notes

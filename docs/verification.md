@@ -2,7 +2,7 @@
 
 ## 可重复检查
 
-`npm run check` 执行 TypeScript 检查、插件构建、Vitest 行为测试和 Client ModuleLoader / Host / 生命周期验证。TypeScript 拒绝未使用的声明。CI 在 Windows 与 Linux 上运行相同检查，再预检 npm 包。
+`npm run check` 执行 TypeScript 检查、插件构建、Vitest 行为测试和 Client ModuleLoader / Host / 生命周期验证。TypeScript 拒绝未使用的声明。CI 在 Windows 与 Linux 的 Node 22 / 24 上运行相同检查，再预检 npm 包。推送 `v*` 标签的 Release 工作流在完整检查后打包，执行工作台市场 8 MiB 体积上限守卫，并将固定文件名 `dsh-explainroo.tgz` 附到 GitHub Release；配置 `NPM_TOKEN` 后随 Release 自动发布 npm。
 
 测试覆盖项目初始化、多项目目录边界、revision 冲突、锁定、历史持久化、跨文件事务恢复、中文名称和引用验证、配音缓存保持、画面覆盖、任务执行与取消、原生会话归属、引用隔离、分栏清理，以及内联旁白的防误删、拖动位置、Unicode 边界和撤销重做。
 
