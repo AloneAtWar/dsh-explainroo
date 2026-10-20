@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, mkdir, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readdir, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
@@ -12,7 +12,7 @@ const engineRoot = findEngine(defaults());
 describe.skipIf(!engineRoot)('empty video workspace onboarding', () => {
   let root: string; let folder: string; let app: Workbench;
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'explainroo-workspace-')); folder = join(root, '我的视频'); await mkdir(folder);
+    root = await realpath(await mkdtemp(join(tmpdir(), 'explainroo-workspace-'))); folder = join(root, '我的视频'); await mkdir(folder);
     app = new Workbench({ ...defaults(), engineRoot, libraryRoot: join(root, 'not-selected'), dataDir: join(root, 'settings') }); await app.ready;
   });
   afterEach(async () => { vi.restoreAllMocks(); await app.close(); await rm(root, { recursive: true, force: true }); });
