@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { pathToFileURL } from 'node:url';
-import { resolve } from 'node:path';
-const root = resolve('skills/explainroo/app');
-const script = await import(pathToFileURL(root + '/src/script.js').href);
-const refs = await import(pathToFileURL(root + '/src/references.js').href);
-const project = await import(pathToFileURL(root + '/src/project.js').href);
+import { engineModules, findEngine } from '../src/host/engine.ts';
+import { defaults } from '../src/config.ts';
+const script = await engineModules(findEngine(defaults()));
+const refs = script;
+const project = script;
 
-describe('Chinese names are real keys, without a display-name map', () => {
+describe('plugin identifiers preserve Chinese project keys', () => {
   it('parses Chinese and mixed scene/cue names and resolves exact cue times', () => {
     const result = script.parseScript('## 开场介绍\n[#认识账户] 认识账户。\n\n## 字段_v2\n[#字段2] 展开。', {language:'zh'});
     expect(result.scenes.map((s: any) => s.id)).toEqual(['开场介绍','字段_v2']);

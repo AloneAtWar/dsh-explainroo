@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+
+const commit = process.argv[2];
+assert(commit && /^[a-f0-9]{40}$/.test(commit), 'Pass the reviewed, full upstream commit SHA.');
+const manifest = JSON.parse(await readFile('package.json', 'utf8'));
+const expected = `https://codeload.github.com/vincentsch/explainroo/tar.gz/${commit}`;
+assert.equal(manifest.dependencies.explainroo, expected, 'Update package.json, regenerate the lockfile, then run npm ci --ignore-scripts first.');
+const lock = JSON.parse(await readFile('package-lock.json', 'utf8'));
+assert.equal(lock.packages['node_modules/explainroo'].resolved, expected);
+assert(lock.packages['node_modules/explainroo'].integrity);
+const root = dirname(createRequire(import.meta.url).resolve('explainroo/package.json'));
+const previous = JSON.parse(await readFile('upstream.json', 'utf8'));
+const integrityFiles: Record<string, string> = {};
+for (const file of Object.keys(previous.integrityFiles)) integrityFiles[file] = createHash('sha256').update(await readFile(join(root, file))).digest('hex');
+const version = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')).version;
+await writeFile('upstream.json', JSON.stringify({ repository: previous.repository, commit, version, integrityFiles }, null, 2) + '\n');
+console.log(`Recorded Explainroo ${version} at ${commit}. Review the changes, then run npm run check and Desktop validation.`);

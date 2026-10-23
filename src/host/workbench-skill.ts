@@ -11,7 +11,7 @@ export const workbenchSkill = {
 
 explainroo_project 返回最新 revision、锁定和手动调整。explainroo_edit_scene 修改单场；场景或触发点改名使用 explainroo_rename，统一更新引用，禁止只改标题或盲目全文替换。锁定不能由 AI 解开。每场都写 note 分镜说明，概括构图、对象关系、动画顺序和旁白标记；先保存绘图文件，再读取最新 revision，逐场写 note 并沿用每次返回的新 revision，不将说明混入旁白。
 
-Agent 直接修改 script.md、scenes.js 或其辅助模块后，必须运行 explainroo_validate({id})，或 node ".dsh/skills/explainroo/scripts/validate.mjs" "<项目目录>"。只有 ok: true / 退出码 0 才通过；按 file、line、scene 修复悬空引用与重名。无法静态确认的动态定义不能声称已验证。此检查不执行项目代码、不生成配音；仍需查看无声预览检查实际画面。已有工作区 skill 若仍要求英文名称，以本段中文支持规则为准；外部旧引擎不支持时在工作台设置清空引擎目录，使用内置引擎，不修改共享旧引擎。
+Agent 直接修改 script.md、scenes.js 或其辅助模块后，必须运行 explainroo_validate({id})，或 node ".dsh/skills/explainroo/scripts/validate.mjs" "<项目目录>"。只有 ok: true / 退出码 0 才通过；按 file、line、scene 修复悬空引用与重名。无法静态确认的动态定义不能声称已验证。此检查不执行项目代码、不生成配音；仍需查看无声预览检查实际画面。已有工作区 skill 若仍要求英文名称，以本段中文支持规则为准；中文 ID 和 MiMo 由插件兼容层处理，不能直接使用原版 CLI。旧工作区脚本可能仍直连旧引擎，优先使用 Host 工具；不修改共享引擎。
 
 工作台保存后自动刷新无声预览。render 导出视频内部补齐配音，sheet 不生成配音；仅在用户明确要求时用 explainroo_run 执行配音或导出，使用 job_output(wait=true) 查看结果，启动不等于完成。不要发送自动对话或打印凭据。`,
 };

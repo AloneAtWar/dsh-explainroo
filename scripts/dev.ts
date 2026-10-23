@@ -8,9 +8,9 @@ import { requests, type RemoteMethod } from '../src/shared/remote.ts';
 
 const args = process.argv.slice(2);
 const flag = (name: string) => { const index = args.indexOf('--' + name); return index < 0 ? undefined : args[index + 1]; };
-const config = defaults(); config.dataDir = resolve('.local/dev');
+const config = defaults(); config.dataDir = resolve(flag('data-dir') ?? '.local/dev');
 const workbench = new Workbench(config); await workbench.ready;
-if (flag('library') || flag('engine')) await workbench.invoke('configure', { libraryRoot: flag('library'), engineRoot: flag('engine') });
+if (flag('library') || flag('engine')) await workbench.invoke('configure', { libraryRoot: flag('library') ? resolve(flag('library')!) : undefined, engineRoot: flag('engine') ? resolve(flag('engine')!) : undefined });
 const token = randomBytes(24).toString('hex');
 const server = await createServer({
   configFile: false, server: { host: '127.0.0.1', port: Number(flag('port') ?? 4480), strictPort: true },

@@ -1,16 +1,19 @@
 import type { EditableElement, ElementOverride, StudioState } from './types.ts';
+import { emptyIdentities, engineCue, originalCue, originalScene, type Identities } from './identities.ts';
 
 type Stage = Record<string, any>;
 type Scenes = Record<string, (s: Stage) => unknown>;
 const supported = new Set(['text', 'box', 'circle', 'icon', 'image']);
 
 /** The same adapter runs in the preview and in a materialized export project. */
-export function wrapScenes(source: Scenes, state: () => StudioState, report?: (scene: string, elements: EditableElement[]) => void): Scenes {
-  return Object.fromEntries(Object.entries(source).map(([sceneId, draw]) => [sceneId, (s: Stage) => {
+export function wrapScenes(source: Scenes, state: () => StudioState, report?: (scene: string, elements: EditableElement[]) => void, mapping: () => Identities = emptyIdentities): Scenes {
+  return Object.fromEntries(Object.entries(source).map(([engineId, draw]) => [engineId, (s: Stage) => {
+    const identities = mapping(); const sceneId = originalScene(engineId, identities);
     const elements: EditableElement[] = [];
     const counts: Record<string, number> = {};
     const proxy = new Proxy(s, {
       get(target, key) {
+        if (key === 'id') return sceneId;
         const value = Reflect.get(target, key, target);
         if (typeof value !== 'function') return value;
         if (!supported.has(String(key))) return value.bind(target);
@@ -26,6 +29,7 @@ export function wrapScenes(source: Scenes, state: () => StudioState, report?: (s
           const edit = override?.kind === kind && override.baseText === baseText ? override.patch : {};
           const { text, ...properties } = edit;
           const options = { ...original, ...properties };
+          for (const field of ['at', 'out'] as const) if (options[field] !== undefined) options[field] = engineCue(options[field], identities);
           if (kind === 'circle' && (edit.w !== undefined || edit.h !== undefined)) options.r = Math.min(edit.w ?? edit.h!, edit.h ?? edit.w!) / 2;
           if (kind === 'icon' && (edit.w !== undefined || edit.h !== undefined)) options.size = edit.w ?? edit.h;
           if (kind === 'text' && edit.w !== undefined) options.maxWidth = edit.w;
@@ -46,7 +50,7 @@ export function wrapScenes(source: Scenes, state: () => StudioState, report?: (s
             elements.push({
               id, kind, baseText, text: String(text ?? baseText), x: Number(options.x ?? result.x), y: Number(options.y ?? result.y),
               w: result.w, h: result.h, size: Number(options.size ?? 48), color: String(options.color ?? 'ink'),
-              at: options.at ?? 0, ...(options.out !== undefined ? { out: options.out } : {}), enter: String(options.enter ?? 'fade'),
+              at: originalCue(options.at ?? 0, identities), ...(options.out !== undefined ? { out: originalCue(options.out, identities) } : {}), enter: String(options.enter ?? 'fade'),
               visible: target.t >= at && target.t <= out,
               screen: { x: a.x / engineScale, y: a.y / engineScale, w: (b.x - a.x) / engineScale, h: (b.y - a.y) / engineScale },
             });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Clapperboard, Copy, Download, FolderOpen, Image, LockKeyhole, MessageSquare, Moon, Pause, Pencil, Play, Rabbit, Redo2, RefreshCw, Save, Settings2, Sun, Undo2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clapperboard, Copy, Download, FolderOpen, Image, LockKeyhole, MessageSquare, Moon, Pause, Pencil, Play, Redo2, RefreshCw, Save, Settings2, Sun, Undo2, X } from 'lucide-react';
 import type { Appearance, EditableElement, ElementPatch, NewProjectRequest, ProjectDetail, SetupInfo, TaskAction, TaskInfo, WorkbenchApi } from '../shared/types.ts';
 import type { SceneSelection } from './scene-references.ts';
 import { themes, textures } from '../shared/types.ts';
@@ -8,6 +8,7 @@ import css from './workbench.css?inline';
 import workspaceCss from './workspace-ui.css?inline';
 import { ProjectPicker } from './ProjectPicker.tsx';
 import { SettingsDialog } from './SettingsDialog.tsx';
+import { ExplainrooIcon } from './ExplainrooIcon.tsx';
 import { referencePrompt, markerReferencePrompt, type ReferenceKind } from './reference-prompt.ts';
 import { RenameDialog } from './RenameDialog.tsx';
 import { NarrationEditor } from './InlineNarrationEditor.tsx';
@@ -249,7 +250,7 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
   useEffect(() => { for (const task of tasks) { if (!pendingExports.current.has(task.id) || handledExports.current.has(task.id) || task.status === 'running') continue; handledExports.current.add(task.id); pendingExports.current.delete(task.id); if (task.status === 'completed') { setReadyExport(task); void saveExport(task).catch(cause => setError(message(cause).split('\n')[0].slice(0, 160))); } else if (task.status === 'failed') setError((task.error ?? t('exportFailed')).split('\n')[0].slice(0, 160)); } }, [tasks]);
   return <section ref={workbenchRoot} className="er-workbench" data-ui-theme={uiTheme} aria-label={t('title')}>
     <header className="er-topbar">
-      <div className="er-brand"><Rabbit size={25}/><strong>explainroo</strong></div>
+      <div className="er-brand"><ExplainrooIcon/><strong>explainroo</strong></div>
       <ProjectPicker projects={setup?.projects ?? []} current={project?.id} disabled={dirty || loading || saving || openingConversation} choose={id => { setSettings(false); setCreating(false); void load(id); }} create={startProject} t={t}/>
       {!settings && project && <span className={'er-saveStatus' + (dirty ? ' is-dirty' : '')}>{saving ? t('saving') : dirty ? t('unsaved') : <><Check size={13}/>{t('saved')}</>}</span>}
       <div className="er-topActions">
@@ -341,7 +342,7 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
     {renaming && <RenameDialog kind={renaming.kind} from={renaming.from} close={() => setRenaming(null)} save={async to => { setSaving(true); try { const next = await api.rename({ id: renaming.projectId, revision: renaming.revision, sceneId: renaming.sceneId, kind: renaming.kind, from: renaming.from, to, origin: 'user' }); accept(next, renaming.kind === 'scene' ? to : renaming.sceneId); setThumbs({}); setFrame(initialFrame); setRenaming(null); setNotice(t('saved')); } finally { setSaving(false); } }} t={t}/>}
     {settings && setup && <SettingsDialog setup={setup} project={project} disabled={busy || dirty} pickDirectory={pickDirectory} close={() => setSettings(false)} save={async value => {
       if (value.voice && project) accept(await api.voiceSettings({ id: project.id, revision: project.revision, voice: value.voice }));
-      if (value.libraryRoot !== setup.libraryRoot || value.engineRoot !== setup.engineRoot) { const next = await api.configure({ libraryRoot: value.libraryRoot, engineRoot: value.engineRoot }); setSetup(next); setLibraryPath(next.libraryRoot); setEnginePath(next.engineRoot); const selected = next.projects.find(item => item.folder === project?.folder) ?? next.projects[0]; if (selected && next.engineReady) accept(await api.project({ id: selected.id }), ''); else setProject(null); setThumbs({}); setFrame(initialFrame); }
+      if (value.libraryRoot !== setup.libraryRoot || value.engineRoot !== (setup.configuredEngineRoot ?? setup.engineRoot)) { const next = await api.configure({ libraryRoot: value.libraryRoot, engineRoot: value.engineRoot }); setSetup(next); setLibraryPath(next.libraryRoot); setEnginePath(next.engineRoot); const selected = next.projects.find(item => item.folder === project?.folder) ?? next.projects[0]; if (selected && next.engineReady) accept(await api.project({ id: selected.id }), ''); else setProject(null); setThumbs({}); setFrame(initialFrame); }
       setSettings(false); setNotice(t('saved'));
     }} t={t}/>}
     {contextMenu && <div ref={menuRoot} role="menu" className="er-contextMenu" style={{ left: contextMenu.x, top: contextMenu.y }}><button role="menuitem" onClick={() => void copyReference()}><Copy size={15}/>{contextMenu.label}</button>{['scene', 'marker'].includes(contextMenu.kind) && <button role="menuitem" title={dirty ? t('dirtyHint') : undefined} disabled={busy || dirty || !!project?.studio.scenes[contextMenu.sceneId]?.locked} onClick={() => { beginRename(contextMenu.kind === 'marker' ? 'marker' : 'scene', contextMenu.marker ?? contextMenu.sceneId, contextMenu.sceneId); setContextMenu(null); }}><Pencil size={15}/>{t(contextMenu.kind === 'marker' ? 'renameMarker' : 'renameScene')}</button>}</div>}

@@ -5,8 +5,9 @@ import type { Translate } from './copy.ts';
 
 export function SettingsDialog({ setup, project, disabled, pickDirectory, close, save, t }: { setup: SetupInfo; project: ProjectDetail | null; disabled: boolean; pickDirectory?: () => Promise<string | null>; close: () => void; save: (value: { libraryRoot: string; engineRoot: string; voice?: VoiceSettings }) => Promise<void>; t: Translate }) {
   const [tab, setTab] = useState<'workspace' | 'voice'>('workspace');
-  const [libraryRoot, setLibraryRoot] = useState(setup.libraryRoot); const [engineRoot, setEngineRoot] = useState(setup.engineRoot);
-  const [voice, setVoice] = useState<VoiceSettings>(project?.voiceSettings ?? { provider: 'mimo', id: '冰糖' });
+  const configuredEngine = setup.configuredEngineRoot ?? setup.engineRoot;
+  const [libraryRoot, setLibraryRoot] = useState(setup.libraryRoot); const [engineRoot, setEngineRoot] = useState(configuredEngine);
+  const [voice, setVoice] = useState<VoiceSettings>(project?.voiceSettings ?? { provider: 'kokoro', id: project?.defaultVoice ?? '' });
   const [voiceEdited, setVoiceEdited] = useState(false); const [saving, setSaving] = useState(false); const [error, setError] = useState('');
   const dialog = useRef<HTMLDivElement>(null); const current = useRef({saving, close}); current.current = {saving, close};
   useEffect(() => {
@@ -24,7 +25,8 @@ export function SettingsDialog({ setup, project, disabled, pickDirectory, close,
     return () => { document.removeEventListener('keydown', keyboard); previous?.focus(); };
   }, []);
   const voiceChanged = voiceEdited && JSON.stringify(voice) !== JSON.stringify(project?.voiceSettings);
-  const changed = libraryRoot !== setup.libraryRoot || engineRoot !== setup.engineRoot || voiceChanged;
+  const voiceValid = (voice.provider === 'recording' ? voice.src : voice.id).trim().length > 0;
+  const changed = libraryRoot !== setup.libraryRoot || engineRoot !== configuredEngine || voiceChanged;
   const choose = async (which: 'workspace' | 'engine') => { try { const path = await pickDirectory?.(); if (path) (which === 'workspace' ? setLibraryRoot : setEngineRoot)(path); } catch (cause) { setError(/ENOENT|no such file/i.test(String(cause)) ? t('folderMissing') : (cause instanceof Error ? cause.message : String(cause)).split('\n')[0].slice(0, 160)); } };
   const update = (value: VoiceSettings) => { setVoice(value); setVoiceEdited(true); setError(''); };
   return <div className="er-settingsOverlay"><div ref={dialog} className="er-settingsDialog" role="dialog" aria-modal="true" aria-label={t('workbenchSettings')}>
@@ -33,11 +35,20 @@ export function SettingsDialog({ setup, project, disabled, pickDirectory, close,
     <div className="er-settingsBody"><fieldset disabled={saving || disabled}>
       {tab === 'workspace' ? <><label>{t('library')}<span className="er-pathField"><input aria-label={t('library')} value={libraryRoot} onChange={event => setLibraryRoot(event.target.value)}/>{pickDirectory && <button className="er-icon" aria-label={t('choose')} onClick={() => void choose('workspace')}><FolderOpen size={18}/></button>}</span></label><details><summary>{t('advancedVoice')}</summary><label>{t('engine')}<span className="er-pathField"><input aria-label={t('engine')} value={engineRoot} onChange={event => setEngineRoot(event.target.value)}/>{pickDirectory && <button className="er-icon" aria-label={t('engine')} onClick={() => void choose('engine')}><FolderOpen size={18}/></button>}</span></label></details></> : <>
         <div className="er-settingsProject">{project?.title}</div>
-        <label>{t('voiceProvider')}<select aria-label={t('voiceProvider')} value={voice.provider} onChange={event => { const provider = event.target.value as VoiceSettings['provider']; update(project?.voiceSettings?.provider === provider ? project.voiceSettings : provider === 'mimo' ? { provider, id: '冰糖' } : provider === 'kokoro' ? { provider, id: project?.voiceChoices?.[0]?.id ?? '' } : { provider, id: '' }); }}><option value="mimo">MiMo</option><option value="elevenlabs">ElevenLabs</option><option value="kokoro">Kokoro · {t('localVoice')}</option></select></label>
-        <label>{t(voice.provider === 'elevenlabs' ? 'voiceId' : 'voiceName')}{voice.provider === 'kokoro' && project?.voiceChoices?.length ? <select aria-label={t('voiceName')} value={voice.id} onChange={event => update({ ...voice, id: event.target.value })}>{project.voiceChoices.map(item => <option key={item.id} value={item.id}>{item.id} · {item.label}</option>)}</select> : <input aria-label={t(voice.provider === 'elevenlabs' ? 'voiceId' : 'voiceName')} value={voice.id} maxLength={200} onChange={event => update({ ...voice, id: event.target.value })}/>}</label>
-        {voice.provider !== 'kokoro' && <details><summary>{t('advancedVoice')}</summary><label>{t('voiceModel')}<input aria-label={t('voiceModel')} value={voice.model ?? ''} placeholder={voice.provider === 'mimo' ? 'mimo-v2.5-tts' : 'eleven_multilingual_v2'} onChange={event => update({ ...voice, model: event.target.value || undefined })}/></label>{voice.provider === 'mimo' && <><label>{t('voiceStyle')}<textarea aria-label={t('voiceStyle')} value={voice.style ?? ''} maxLength={500} onChange={event => update({ ...voice, style: event.target.value })}/></label><label>{t('voiceHost')}<input aria-label={t('voiceHost')} value={voice.host ?? ''} placeholder="api.xiaomimimo.com" onChange={event => update({ ...voice, host: event.target.value || undefined })}/></label></>}</details>}
+        <p className="er-settingsHint">{t('voiceSettingsHint')}</p>
+        <label>{t('voiceProvider')}<select aria-label={t('voiceProvider')} value={voice.provider} onChange={event => {
+          const provider = event.target.value as VoiceSettings['provider'];
+          update(project?.voiceSettings?.provider === provider ? project.voiceSettings
+            : provider === 'kokoro' ? { provider, id: project?.defaultVoice ?? '' }
+            : provider === 'recording' ? { provider, src: 'assets/narration/' }
+            : provider === 'mimo' ? { provider, id: '冰糖' } : { provider, id: '' });
+        }}><option value="kokoro">Kokoro · {t('localVoice')}</option><option value="elevenlabs">ElevenLabs</option><option value="recording">{t('recordingVoice')}</option><option value="mimo">MiMo · {t('pluginVoice')}</option></select></label>
+        {voice.provider === 'recording'
+          ? <label>{t('recordingSource')}<input aria-label={t('recordingSource')} value={voice.src} maxLength={1000} placeholder="assets/narration/" onChange={event => update({ ...voice, src: event.target.value })}/></label>
+          : <label>{t(voice.provider === 'elevenlabs' ? 'voiceId' : 'voiceName')}{voice.provider === 'kokoro' && project?.voiceChoices?.length ? <select aria-label={t('voiceName')} value={voice.id} onChange={event => update({ ...voice, id: event.target.value })}>{project.voiceChoices.map(item => <option key={item.id} value={item.id}>{item.id} · {item.label}</option>)}</select> : <input aria-label={t(voice.provider === 'elevenlabs' ? 'voiceId' : 'voiceName')} value={voice.id} maxLength={200} onChange={event => update({ ...voice, id: event.target.value })}/>}</label>}
+        {(voice.provider === 'mimo' || voice.provider === 'elevenlabs') && <details><summary>{t('advancedVoice')}</summary><label>{t('voiceModel')}<input aria-label={t('voiceModel')} value={voice.model ?? ''} placeholder={voice.provider === 'mimo' ? 'mimo-v2.5-tts' : 'eleven_multilingual_v2'} onChange={event => update({ ...voice, model: event.target.value || undefined })}/></label>{voice.provider === 'mimo' && <><label>{t('voiceStyle')}<textarea aria-label={t('voiceStyle')} value={voice.style ?? ''} maxLength={500} onChange={event => update({ ...voice, style: event.target.value })}/></label><label>{t('voiceHost')}<input aria-label={t('voiceHost')} value={voice.host ?? ''} placeholder="api.xiaomimimo.com" onChange={event => update({ ...voice, host: event.target.value || undefined })}/></label></>}</details>}
       </>}
     </fieldset>{error && <div role="alert" className="er-settingsError">{error}</div>}</div>
-    <footer><button className="er-button" disabled={saving} onClick={close}>{t('cancelSettings')}</button><button className="er-button er-primary" disabled={!changed || disabled || saving || !libraryRoot.trim() || (voiceChanged && !voice.id.trim())} onClick={() => { setSaving(true); setError(''); void save({ libraryRoot, engineRoot, ...(voiceChanged ? { voice } : {}) }).catch(cause => setError(cause instanceof Error ? cause.message : String(cause))).finally(() => setSaving(false)); }}>{t(saving ? 'saving' : 'apply')}</button></footer>
+    <footer><button className="er-button" disabled={saving} onClick={close}>{t('cancelSettings')}</button><button className="er-button er-primary" disabled={!changed || disabled || saving || !libraryRoot.trim() || (voiceChanged && !voiceValid)} onClick={() => { setSaving(true); setError(''); void save({ libraryRoot, engineRoot, ...(voiceChanged ? { voice } : {}) }).catch(cause => setError(cause instanceof Error ? cause.message : String(cause))).finally(() => setSaving(false)); }}>{t(saving ? 'saving' : 'apply')}</button></footer>
   </div></div>;
 }

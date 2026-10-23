@@ -1,4 +1,5 @@
 import type { EditableElement, ElementOverride, StudioState } from '../shared/types.ts';
+import { emptyIdentities, originalScene, type Identities } from '../shared/identities.ts';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const view = document.getElementById('view') as HTMLDivElement;
@@ -21,7 +22,7 @@ let loading = false;
 let audioScene: string | null = null;
 const audio = new Audio();
 audio.preload = 'auto';
-const studio = { state: { version: 1, revision: 0, stage: 'visual', scenes: {} } as StudioState, report: (id: string, list: EditableElement[]) => { if (collecting) { sceneId = id; elements = list; } } };
+const studio = { identities: emptyIdentities() as Identities, state: { version: 1, revision: 0, stage: 'visual', scenes: {} } as StudioState, report: (id: string, list: EditableElement[]) => { if (collecting) { sceneId = id; elements = list; } } };
 (globalThis as any).__explainrooStudio = studio;
 function send(type: string, data: unknown): void { parent.postMessage({ source: 'explainroo-frame', channel, type, data }, '*'); }
 function error(message: string): void { errorBox.textContent = message; errorBox.style.display = message ? 'block' : 'none'; if (message) send('error', message); }
@@ -70,7 +71,7 @@ async function thumbnails(): Promise<void> {
   const images: Record<string, string> = {};
   collecting = false;
   for (const scene of state.timeline.scenes) {
-    try { engine.renderFrame(scene.start + scene.dur - 1 / state.config.fps); ctx.drawImage(canvas, 0, 0, thumbnail.width, thumbnail.height); images[scene.id] = thumbnail.toDataURL('image/jpeg', 0.7); }
+    try { engine.renderFrame(scene.start + scene.dur - 1 / state.config.fps); ctx.drawImage(canvas, 0, 0, thumbnail.width, thumbnail.height); images[originalScene(scene.id, studio.identities)] = thumbnail.toDataURL('image/jpeg', 0.7); }
     catch { /* A broken scene is surfaced when selected; other thumbnails remain useful. */ }
   }
   collecting = true; draw(); send('thumbnails', images);
@@ -81,6 +82,7 @@ async function load(): Promise<void> {
     runtime ??= await import(/* @vite-ignore */ runtimeUrl);
     const fresh = await runtime.fetchState();
     studio.state = fresh.studio;
+    studio.identities = fresh.identities ?? emptyIdentities();
     const result = await runtime.boot({ canvas, scale: Math.min(1, 1280 / fresh.config.width), version: fresh.version });
     engine?.clipFrames?.close(); engine = result.engine; state = result.state;
     engine.onClipFrame = draw;

@@ -1,10 +1,14 @@
 import http from 'node:http';
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Projects } from './projects.ts';
-import { engineModules, previewData } from './engine.ts';
+import { upstreamModules, previewData } from './engine.ts';
+import { materializeCompatibility, previewFingerprint } from './compatibility.ts';
+import { digest, Serial } from './files.ts';
+import { versionImports } from './compat/references.mjs';
 
 export function runtimeAsset(name: string): string {
   const here = dirname(fileURLToPath(import.meta.url));
@@ -29,13 +33,23 @@ export class Previews {
   }
   private async start(folder: string) {
     const root = this.projects.engineRoot();
-    const engine = await engineModules(root);
-    const getState = async () => {
+    const engine = await upstreamModules(root);
+    const destination = await mkdtemp(join(tmpdir(), 'dsh-explainroo-preview-'));
+    const refresh = new Serial(); let signature = ''; let identities = { scenes: {}, markers: {} };
+    const getState = () => refresh.run('state', async () => {
       const snapshot = await this.projects.snapshot(folder);
-      const { state } = await previewData(root, folder, snapshot.studio.appearance);
-      return { ...state, studio: snapshot.studio, version: `${state.version}-${snapshot.studio.revision}` };
-    };
-    const upstream = await engine.startServer({ projectDir: folder, getState });
+      const revision = await this.projects.revision(folder, snapshot);
+      const next = digest(revision + await previewFingerprint(folder));
+      if (next !== signature) {
+        identities = (await materializeCompatibility(root, folder, destination, snapshot.studio)).identities;
+        signature = next;
+      }
+      const { state } = await previewData(root, destination);
+      return { ...state, identities, studio: snapshot.studio, version: signature };
+    });
+    let upstream: { url: string; close(): Promise<void> };
+    try { await getState(); upstream = await engine.startServer({ projectDir: destination, getState }); }
+    catch (error) { await rm(destination, { recursive: true, force: true }); throw error; }
     const upstreamUrl = new URL(upstream.url);
     const server = http.createServer(async (req, res) => {
       try {
@@ -49,20 +63,21 @@ export class Previews {
         if (url.pathname === '/studio/frame.js' || url.pathname === '/studio/scene-adapter.js') {
           res.setHeader('Content-Type', 'text/javascript; charset=utf-8'); res.end(await readFile(runtimeAsset(url.pathname.endsWith('frame.js') ? 'frame.js' : 'scene-adapter.js'))); return;
         }
-        if (url.pathname === '/project/scenes.js') {
-          res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
-          res.end(`import original from ${JSON.stringify('/project/studio-source-scenes.js' + url.search)};\nimport {wrapScenes} from '/studio/scene-adapter.js';\nexport default wrapScenes(original,()=>globalThis.__explainrooStudio.state,(id,items)=>globalThis.__explainrooStudio.report(id,items));`); return;
+        if (url.pathname.startsWith('/project/') && /\.m?js$/i.test(url.pathname)) {
+          const file = engine.projectFile(destination, decodeURIComponent(url.pathname.slice(9)));
+          if (!file) { res.writeHead(404); res.end(); return; }
+          res.setHeader('Content-Type', 'text/javascript; charset=utf-8'); res.end(versionImports(await readFile(file, 'utf8'), signature)); return;
         }
-        const target = url.pathname === '/project/studio-source-scenes.js' ? '/project/scenes.js' + url.search : url.pathname + url.search;
+        const target = url.pathname + url.search;
         const headers = { ...req.headers, host: upstreamUrl.host }; delete headers.origin;
         const forward = http.request(upstreamUrl.origin + target, { method: req.method, headers }, response => { res.writeHead(response.statusCode ?? 502, response.headers); response.pipe(res); });
         forward.on('error', () => { res.writeHead(502); res.end('Preview engine stopped'); }); forward.end();
       } catch (error) { res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end(error instanceof Error ? error.message : String(error)); }
     });
     try { await new Promise<void>((accept, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', accept); }); }
-    catch (error) { await upstream.close(); throw error; }
+    catch (error) { await upstream.close(); await rm(destination, { recursive: true, force: true }); throw error; }
     const port = (server.address() as { port: number }).port;
-    return { url: `http://127.0.0.1:${port}/`, close: async () => { server.closeAllConnections(); await new Promise<void>(accept => server.close(() => accept())); await upstream.close(); } };
+    return { url: `http://127.0.0.1:${port}/`, close: async () => { server.closeAllConnections(); await new Promise<void>(accept => server.close(() => accept())); await upstream.close(); await refresh.run('state', () => rm(destination, { recursive: true, force: true })); } };
   }
   async close(): Promise<void> { await Promise.allSettled([...this.sessions.values()].map(async session => (await session).close())); this.sessions.clear(); }
 }

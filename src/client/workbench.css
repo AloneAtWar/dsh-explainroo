@@ -79,7 +79,8 @@
   letter-spacing: -.6px;
 }
 .er-brand svg {
-  color: var(--er-amber);
+  display: block;
+  flex: none;
 }
 .er-saveStatus {
   display: flex;

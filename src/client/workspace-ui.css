@@ -130,9 +130,6 @@
   --er-cyan: #087780;
   color-scheme: light;
 }
-.er-workbench[data-ui-theme=light] .er-brand svg {
-  color: #a96309;
-}
 .er-workbench[data-ui-theme=light] .er-button {
   background: #fff;
   border-color: #c7d1de;
@@ -469,6 +466,12 @@
   font-size: 12px;
   color: var(--er-muted);
   overflow-wrap: anywhere;
+}
+.er-settingsHint {
+  margin: -10px 0 0;
+  color: var(--er-muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
 .er-settingsDialog>footer {
   display: flex;

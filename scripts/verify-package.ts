@@ -4,16 +4,24 @@ import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
 import semver from 'semver';
+import { dirname, join } from 'node:path';
+import { createHash } from 'node:crypto';
 
 const manifest = JSON.parse(await readFile('package.json', 'utf8'));
+const require = createRequire(import.meta.url);
 for (const entry of Object.values(manifest.exports) as string[]) assert(existsSync(entry), `missing export ${entry}`);
 assert(existsSync(manifest.dsh.bundle.patch));
 assert(manifest.files.includes('skills'));
-for (const path of ['SKILL.md', 'scripts/explainroo.mjs', 'references/scene-api.md', 'references/writing-and-visuals.md', 'references/storyboard-notes.md', 'examples/password-storage-zh/scenes.js', 'app/src/voice.js', 'app/engine/runtime.js', 'app/fonts/Inter-400-latin.woff2', 'LICENSE']) assert(existsSync(`skills/explainroo/${path}`), `missing workspace skill resource ${path}`);
+for (const path of ['SKILL.md', 'scripts/explainroo.mjs', 'references/scene-api.md', 'references/writing-and-visuals.md', 'references/storyboard-notes.md', 'examples/chinese-demo/scenes.js', 'LICENSE']) assert(existsSync(`skills/explainroo/${path}`), `missing workspace skill resource ${path}`);
 assert(existsSync('lib/export-worker.js'));
-for (const file of ['app/src/names.js', 'app/src/references.js', 'scripts/validate.mjs', 'references/chinese-names.md']) assert(existsSync(`skills/explainroo/${file}`), `missing Chinese naming/validation resource ${file}`);
-const engineManifest = JSON.parse(await readFile('skills/explainroo/app/package.json', 'utf8'));
-for (const dependency of Object.keys(engineManifest.dependencies)) assert(manifest.dependencies[dependency], `missing bundled engine dependency ${dependency}`);
+for (const file of ['scripts/validate.mjs', 'references/chinese-names.md']) assert(existsSync(`skills/explainroo/${file}`), `missing Chinese naming/validation resource ${file}`);
+assert(!existsSync('skills/explainroo/app'), 'upstream engine must be an external dependency, not vendored');
+const upstream = JSON.parse(await readFile('upstream.json', 'utf8'));
+assert.equal(manifest.dependencies.explainroo, `https://codeload.github.com/vincentsch/explainroo/tar.gz/${upstream.commit}`);
+const engineRoot = dirname(require.resolve('explainroo/package.json'));
+assert.equal(JSON.parse(await readFile(join(engineRoot, 'package.json'), 'utf8')).version, upstream.version);
+for (const [file, hash] of Object.entries(upstream.integrityFiles)) assert.equal(createHash('sha256').update(await readFile(join(engineRoot, file))).digest('hex'), hash, `upstream file was modified: ${file}`);
+assert(!/from\s*['"]\.\//.test(await readFile('lib/scene-adapter.js', 'utf8')), 'materialized scene adapter must be self-contained');
 assert(!existsSync('skills/explainroo/engine.json'), 'machine-specific engine.json must only be generated in user workspaces');
 for (const [name, range] of Object.entries(manifest.peerDependencies) as [string, string][]) {
   if (!name.startsWith('@deepseek-ai/dsh-')) continue;
@@ -22,7 +30,6 @@ for (const [name, range] of Object.entries(manifest.peerDependencies) as [string
   assert(!Object.hasOwn(manifest.dependencies, name), `${name} must remain a host peer`);
 }
 const host = await import(new URL('../lib/index.js', import.meta.url).href); assert.equal(host.name, 'dsh-explainroo'); assert.equal(typeof host.apply, 'function');
-const require = createRequire(import.meta.url);
 let entry: any;
 const mounted: string[] = [];
 const document = { documentElement: { style: {} }, createElement: () => ({ dataset: {}, textContent: '', remove() { mounted.pop(); } }), head: { appendChild() { mounted.push('style'); } } };

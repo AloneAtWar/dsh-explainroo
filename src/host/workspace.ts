@@ -41,7 +41,10 @@ async function skillFiles(engineRoot: string): Promise<Map<string, string | Buff
     }
   }
   await collect(root);
-  files.set(join(skillRelative, 'engine.json'), JSON.stringify({ engineRoot }, null, 2) + '\n');
+  const pluginRoot = resolve(root, '../..');
+  files.set(join(skillRelative, 'references/upstream-guide.md'), await readFile(join(engineRoot, 'AGENTS.md')));
+  files.set(join(skillRelative, 'UPSTREAM_LICENSE'), await readFile(join(engineRoot, 'LICENSE')));
+  files.set(join(skillRelative, 'engine.json'), JSON.stringify({ engineRoot, pluginRoot }, null, 2) + '\n');
   return files;
 }
 // Exclusive creates and a narrow rollback preserve files written by another window.
@@ -82,7 +85,7 @@ export async function createWorkspace(request: NewProjectRequest, engineRoot: st
     files.set('scenes.js', 'export default {};\n');
     files.set('.gitignore', '.env\nbuild/\nout/\n.explainroo/runs/\n');
     files.set('script.md', `# ${request.title}\n\n`);
-    files.set('video.json', JSON.stringify({ title: request.title, language: 'zh', size: request.size, theme: request.theme, fps: 30, pace: 1.3, captions: true, voice: { provider: 'mimo', id: '冰糖' } }, null, 2) + '\n');
+    files.set('video.json', JSON.stringify({ title: request.title, language: 'zh', size: request.size, theme: request.theme, fps: 30, pace: 1.3, captions: true }, null, 2) + '\n');
     await writeTree(folder, files);
     return folder;
   });

@@ -15,6 +15,8 @@ describe('background process ownership', () => {
     await mkdir(join(root, 'bin')); await writeFile(join(root, 'bin/explainroo.js'), code);
     const projects = { config: { nodePath: process.execPath, workers: 1 }, serial: new Serial(), get: async () => ({ folder: root, sceneCount: 1, allVoicesCached: true }), engineRoot: () => root } as unknown as Projects;
     tasks = new Tasks(projects);
+    vi.spyOn(tasks, 'createRenderSnapshot').mockResolvedValue(root);
+    vi.spyOn(tasks as any, 'workerArguments').mockReturnValue([join(root, 'bin/explainroo.js')]);
   }
   it('cancels the actual child process and releases project exclusivity', async () => {
     await prepare('console.log("ready");setInterval(()=>{},1000)');

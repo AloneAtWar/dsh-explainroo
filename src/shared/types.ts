@@ -24,6 +24,7 @@ export const voiceSettingsSchema = z.discriminatedUnion('provider', [
   z.object({ provider: z.literal('mimo'), id: voiceId, model: voiceId.optional(), host: voiceId.optional(), style: z.string().max(500).optional() }).strict(),
   z.object({ provider: z.literal('elevenlabs'), id: voiceId, model: voiceId.optional() }).strict(),
   z.object({ provider: z.literal('kokoro'), id: voiceId }).strict(),
+  z.object({ provider: z.literal('recording'), src: z.string().trim().min(1).max(1000) }).strict(),
 ]);
 export type VoiceSettings = z.infer<typeof voiceSettingsSchema>;
 export interface ElementOverride { baseText: string; kind: string; patch: ElementPatch }
@@ -49,6 +50,7 @@ export interface ProjectDetail extends ProjectSummary {
   appearance: { theme: string; bg: string; background: string; captions: boolean; custom: boolean };
   workspaceSkill?: WorkspaceSkill;
   voiceSettings?: VoiceSettings;
+  defaultVoice?: string;
   language?: string;
   voiceChoices?: Array<{ id: string; label: string }>;
 }
@@ -62,7 +64,7 @@ export interface EditableElement {
   visible: boolean; screen: { x: number; y: number; w: number; h: number };
 }
 export interface TaskInfo { id: string; projectId: string; action: TaskAction; status: 'running' | 'completed' | 'failed' | 'cancelled'; log: string; startedAt: number; endedAt?: number; output?: string; error?: string }
-export interface SetupInfo { engineRoot: string; engineReady: boolean; libraryRoot: string; projects: ProjectSummary[]; missing: string[]; folderState?: FolderInspection }
+export interface SetupInfo { engineRoot: string; configuredEngineRoot?: string; engineReady: boolean; libraryRoot: string; projects: ProjectSummary[]; missing: string[]; folderState?: FolderInspection }
 export interface EditRequest {
   id: string; sceneId: string; revision: string; raw?: string; note?: string; locked?: boolean;
   elementId?: string; element?: ElementOverride; origin?: 'user' | 'ai';

@@ -4,11 +4,12 @@ The plugin is MIT licensed. Bundled resources retain their original licenses.
 
 ## explainroo resources
 
-The source engine, skill, examples and fonts originate from [explainroo](https://github.com/vincentsch/explainroo), with local adaptations for Chinese names and reference validation.
+The plugin consumes [explainroo](https://github.com/vincentsch/explainroo) as an unmodified external dependency, pinned by commit and archive integrity in package.json, package-lock.json and upstream.json. The engine, fonts and upstream examples are not copied into this repository or the plugin tarball. Chinese ID conversion, static reference checks and the MiMo integration are maintained by this plugin.
 
-- Engine and skill: [MIT license](skills/explainroo/LICENSE), also retained in [app/LICENSE](skills/explainroo/app/LICENSE).
-- Lucide icon data: [ISC license](skills/explainroo/app/engine/icons/LICENSE-lucide.txt).
-- Fonts: original license files are retained in [app/fonts/licenses](skills/explainroo/app/fonts/licenses/).
+- Explainroo: MIT, with the original copyright and license retained in the installed dependency and [skills/explainroo/LICENSE](skills/explainroo/LICENSE).
+- Upstream Lucide data and fonts retain the licenses included in the dependency's engine/icons/ and fonts/licenses/ directories.
+- A new workspace receives the installed upstream guide and its original license alongside the DSH-specific instructions. Those generated workspace files are not part of the published plugin.
+- The header icon uses the official SVG from [explainroo.com/favicon.svg](https://www.explainroo.com/favicon.svg), retrieved on 2026-10-23, with its original geometry and colors. Explainroo's name and logo identify the upstream project; this is an independent DSH plugin.
 
 ## Bundled frontend code
 

@@ -6,7 +6,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { defaults } from '../src/config.ts';
 import { Workbench } from '../src/service.ts';
-import { findEngine } from '../src/host/engine.ts';
+import { findEngine, upstreamModules } from '../src/host/engine.ts';
 
 const engineRoot = findEngine(defaults());
 describe.skipIf(!engineRoot)('empty video workspace onboarding', () => {
@@ -26,10 +26,15 @@ describe.skipIf(!engineRoot)('empty video workspace onboarding', () => {
     const result = await app.invoke('createProject', { ...input(), folder });
     expect(result.project).toMatchObject({ id: basename(folder), title: input().title, width: 1080, height: 1920, sceneCount: 0, previewUrl: '', allVoicesCached: false, workspaceSkill: { installed: true, discoveryRoot: folder } });
     expect(result.setup.projects).toHaveLength(1); expect(await readdir(folder)).not.toContain('build'); expect(fetch).not.toHaveBeenCalled();
+    const engine = await upstreamModules(engineRoot);
+    expect(JSON.parse(await readFile(join(folder, 'video.json'), 'utf8'))).not.toHaveProperty('voice');
+    expect(result.project.voiceSettings).toEqual({ provider: 'kokoro', id: engine.LANGUAGES.zh });
+    expect(result.project.defaultVoice).toBe(engine.LANGUAGES.zh);
     const skillDir = join(folder, '.dsh/skills/explainroo');
     expect(await readFile(join(skillDir, 'references/scene-api.md'), 'utf8')).toContain('s.text');
-    expect(await readFile(join(skillDir, 'examples/password-storage-zh/scenes.js'), 'utf8')).toContain('export default');
-    expect(await readFile(join(skillDir, 'app/fonts/Inter-400-latin.woff2'))).toEqual(await readFile('skills/explainroo/app/fonts/Inter-400-latin.woff2'));
+    expect(await readFile(join(skillDir, 'examples/chinese-demo/scenes.js'), 'utf8')).toContain('export default');
+    expect(await readFile(join(skillDir, 'references/upstream-guide.md'), 'utf8')).toEqual(await readFile(join(engineRoot, 'AGENTS.md'), 'utf8'));
+    expect(await readdir(skillDir)).not.toContain('app');
     expect(await readFile(join(skillDir, 'references/storyboard-notes.md'), 'utf8')).toContain('explainroo_edit_scene');
     expect(JSON.parse(await readFile(join(skillDir, 'engine.json'), 'utf8')).engineRoot).toBe(engineRoot);
     const help = await promisify(execFile)(process.execPath, [join(skillDir, 'scripts/explainroo.mjs'), '--help'], { windowsHide: true });
@@ -91,6 +96,32 @@ describe.skipIf(!engineRoot)('empty video workspace onboarding', () => {
     const kokoro = await app.invoke('voiceSettings', { id: project.id, revision: changed.revision, voice: { provider: 'kokoro', id: 'zf_xiaobei' } });
     expect(kokoro.voiceSettings).toEqual({ provider: 'kokoro', id: 'zf_xiaobei' });
     expect((await app.invoke('project', { id: project.id })).voiceSettings).toEqual(kokoro.voiceSettings);
+    const recording = await app.invoke('voiceSettings', { id: project.id, revision: kokoro.revision, voice: { provider: 'recording', src: 'assets/旁白/' } });
+    expect(recording.voiceSettings).toEqual({ provider: 'recording', src: 'assets/旁白/' });
+    expect(recording.voice).toBe('recording · assets/旁白/');
+    expect(JSON.parse(await readFile(configFile, 'utf8'))).toEqual({ ...original, voice: { provider: 'recording', src: 'assets/旁白/' } });
+    expect(recording.script).toBe(project.script); expect(recording.studio).toEqual(project.studio);
+    expect(await app.invoke('tasks', { id: '*' })).toEqual([]); expect(fetch).not.toHaveBeenCalled();
+  });
+  it.each([
+    { language: 'en', voice: undefined, expected: { provider: 'kokoro', id: 'af_heart' } },
+    { language: 'ja', voice: undefined, expected: { provider: 'kokoro', id: 'jf_alpha' } },
+    { language: 'zh', voice: 'zf_xiaoni', expected: { provider: 'kokoro', id: 'zf_xiaoni' } },
+    { language: 'zh', voice: { provider: 'elevenlabs', id: 'project-voice', model: 'project-model' }, expected: { provider: 'elevenlabs', id: 'project-voice', model: 'project-model' } },
+    { language: 'zh', voice: { provider: 'recording', src: 'assets/原始旁白/' }, expected: { provider: 'recording', src: 'assets/原始旁白/' } },
+    { language: 'zh', voice: { provider: 'mimo', id: '原有音色', model: 'mimo-v2.5-tts', style: '自然讲述' }, expected: { provider: 'mimo', id: '原有音色', model: 'mimo-v2.5-tts', style: '自然讲述' } },
+  ])('reads original $language voice $voice without rewriting the project or generating speech', async ({ language, voice, expected }) => {
+    const source = JSON.stringify({ title: '原项目', language, ...(voice === undefined ? {} : { voice }) }, null, 4) + '\n';
+    await writeFile(join(folder, 'video.json'), source);
+    await writeFile(join(folder, 'script.md'), '# 原项目\n'); await writeFile(join(folder, 'scenes.js'), 'export default {};\n');
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    await app.invoke('configure', { libraryRoot: folder });
+    const project = await app.invoke('project', { id: basename(folder) });
+    expect(project.voiceSettings).toMatchObject(expected);
+    expect(project.defaultVoice).toBe((await upstreamModules(engineRoot)).LANGUAGES[language]);
+    expect(await readFile(join(folder, 'video.json'), 'utf8')).toBe(source);
+    expect(await readdir(folder)).not.toContain('build'); expect(fetch).not.toHaveBeenCalled();
+    expect(await app.invoke('tasks', { id: '*' })).toEqual([]);
   });
   it('rejects stale, invalid, busy and unsupported voice changes without modifying the config', async () => {
     const { project } = await app.invoke('createProject', { ...input(), folder });
@@ -100,6 +131,7 @@ describe.skipIf(!engineRoot)('empty video workspace onboarding', () => {
     await expect(app.invoke('voiceSettings', { ...request, voice: { provider: 'kokoro', id: 'af_heart' } })).rejects.toThrow();
     await expect(app.invoke('voiceSettings', { ...request, voice: { provider: 'mimo', id: '冰糖', apiKey: 'not-accepted' } })).rejects.toThrow();
     await expect(app.invoke('voiceSettings', { ...request, voice: { provider: 'mimo', id: '' } })).rejects.toThrow();
+    await expect(app.invoke('voiceSettings', { ...request, voice: { provider: 'recording', src: 'assets/../outside.wav' } })).rejects.toThrow('voice.src');
     app.projects.isBusy = () => true;
     await expect(app.invoke('voiceSettings', request)).rejects.toThrow('正在执行任务');
     expect(await readFile(join(folder, 'video.json'), 'utf8')).toBe(before);

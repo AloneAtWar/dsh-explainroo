@@ -1,13 +1,14 @@
 import { randomUUID, randomBytes } from 'node:crypto';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { cp, mkdir, readFile, readdir, writeFile, lstat, realpath } from 'node:fs/promises';
+import { mkdir, writeFile, lstat, realpath } from 'node:fs/promises';
 import { join, relative, isAbsolute } from 'node:path';
-import { existsSync, createReadStream } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { TaskAction, TaskInfo } from '../shared/types.ts';
 import { runtimeAsset } from './preview.ts';
 import type { Projects } from './projects.ts';
-import { applyAppearance, engineModules, previewData } from './engine.ts';
+import { previewData } from './engine.ts';
+import { materializeCompatibility, completedVoices } from './compatibility.ts';
 
 interface Running { info: TaskInfo; revision?: string; child?: ChildProcess; cancelled: boolean; done: Promise<TaskInfo> }
 export class Tasks {
@@ -22,7 +23,7 @@ export class Tasks {
       if (this.projects.isBusy(id)) throw new Error('该项目已有任务正在运行。');
       const project = await this.projects.get(id);
       if (!project.sceneCount) throw new Error('请先创建至少一个场景，再生成配音或导出。');
-      if (typeof this.projects.validate === 'function' && existsSync(join(this.projects.engineRoot(), 'src/references.js'))) {
+      if (typeof this.projects.validate === 'function') {
         const report = await this.projects.validate(id); if (!report.ok) throw new Error(report.issues[0]?.message ?? '场景引用验证失败。');
       }
       if (action === 'check' && !project.allVoicesCached) throw new Error('部分旁白尚未配音或已修改。');
@@ -77,45 +78,35 @@ export class Tasks {
     return { ...(await task.done) };
   }
   async createRenderSnapshot(folder: string, taskId: string): Promise<string> {
+    if (!/^[A-Za-z0-9_-]+$/.test(taskId)) throw new Error('任务副本名称无效。');
+    const root = await realpath(folder);
+    for (const name of ['.explainroo', '.explainroo/runs']) {
+      const target = join(folder, name); await mkdir(target, { recursive: true });
+      const rel = relative(root, await realpath(target));
+      if ((await lstat(target)).isSymbolicLink() || rel.startsWith('..') || isAbsolute(rel)) throw new Error('任务目录必须位于当前项目中，不能是外部链接。');
+    }
     const destination = join(folder, '.explainroo', 'runs', taskId);
-    await mkdir(destination, { recursive: true });
-    for (const file of await readdir(folder)) {
-      if (/\.(?:m?js|json)$/.test(file) && !file.startsWith('.')) await cp(join(folder, file), join(destination, file === 'scenes.js' ? 'studio-source.js' : file));
-    }
-    const engine = await engineModules(this.projects.engineRoot());
-    if (engine.readProjectModules) for (const [file, source] of Object.entries(engine.readProjectModules(folder)) as Array<[string,string]>) {
-      if (file === 'scenes.js') continue;
-      const target = join(destination, file); await mkdir(join(target, '..'), {recursive:true}); await writeFile(target, source);
-    }
-    await cp(join(folder, 'script.md'), join(destination, 'script.md'));
-    for (const name of ['assets', 'build/voice']) if (existsSync(join(folder, name))) await cp(join(folder, name), join(destination, name), { recursive: true, dereference: true });
+    await mkdir(destination);
     const snapshot = await this.projects.snapshot(folder);
-    const raw = JSON.parse(await readFile(join(folder, 'video.json'), 'utf8'));
-    const config = applyAppearance(engine.normalizeConfig(raw, folder), snapshot.studio.appearance);
-    const appearance = snapshot.studio.appearance;
-    if (appearance?.theme || appearance?.bg || appearance?.background) {
-      const look = config.look ?? { extends: config.theme, name: 'studio-look' };
-      await writeFile(join(destination, 'studio-look.json'), JSON.stringify(look, null, 2));
-      raw.theme = 'studio-look.json';
-    }
-    if (appearance?.captions !== undefined) raw.captions = appearance.captions;
-    await writeFile(join(destination, 'video.json'), JSON.stringify(raw, null, 2));
-    await cp(runtimeAsset('scene-adapter.js'), join(destination, 'studio-adapter.js'));
-    await writeFile(join(destination, 'scenes.js'), `import source from './studio-source.js';\nimport {wrapScenes} from './studio-adapter.js';\nconst state=${JSON.stringify(snapshot.studio)};\nexport default wrapScenes(source,()=>state);\n`);
+    await materializeCompatibility(this.projects.engineRoot(), folder, destination, snapshot.studio);
     return destination;
+  }
+  private workerArguments(folder: string, action: TaskAction, original: string): string[] {
+    return [runtimeAsset('export-worker.js'), this.projects.engineRoot(), folder, action, original, String(this.projects.config.workers)];
   }
   private async execute(task: Running, folder: string): Promise<TaskInfo> {
     const { info } = task;
-    const projectPath = info.action === 'voice' ? folder : await this.createRenderSnapshot(folder, info.id);
+    const projectPath = await this.createRenderSnapshot(folder, info.id);
+    if ((await this.projects.get(info.projectId)).revision !== task.revision) throw new Error('创建兼容副本期间项目已变化，请重试。');
     if (info.action === 'check') {
       const snapshot = await previewData(this.projects.engineRoot(), projectPath);
       if (snapshot.cached.size !== snapshot.timeline.scenes.length) throw new Error('创建导出快照期间旁白发生变化，请先生成配音后重试。');
     }
     if (task.cancelled) { info.status = 'cancelled'; info.endedAt = Date.now(); return info; }
     const exporting = info.action === 'render' || info.action === 'sheet';
-    const args = exporting ? [runtimeAsset('export-worker.js'), this.projects.engineRoot(), projectPath, info.action, folder, String(this.projects.config.workers)] : [join(this.projects.engineRoot(), 'bin/explainroo.js'), info.action, projectPath];
+    const args = this.workerArguments(projectPath, info.action, folder);
     if (exporting) info.output = join(projectPath, 'out', info.action === 'render' ? 'video.mp4' : 'storyboard.jpg');
-    try { await new Promise<void>((accept, reject) => {
+    await new Promise<void>((accept, reject) => {
       const child = spawn(this.projects.config.nodePath, args, { cwd: folder, shell: false, windowsHide: true, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
       task.child = child;
       let pending = '';
@@ -128,10 +119,10 @@ export class Tasks {
       };
       child.stdout?.on('data', append); child.stderr?.on('data', append);
       child.once('error', reject); child.once('close', code => { if (task.cancelled || code === 0) accept(); else { const reason = info.log.split('\n').filter(line => line.trim() && !line.startsWith('@explainroo-progress ')).at(-1); reject(new Error(`${reason ?? `explainroo ${info.action} 退出码 ${code}`}`)); } });
-    }); } finally {
-      if (info.action === 'render') {
-        try { if ((await this.projects.get(info.projectId)).revision === task.revision) { const voices = join(projectPath, 'build/voice'); if (existsSync(voices)) { await mkdir(join(folder, 'build/voice'), { recursive: true }); for (const name of await readdir(voices)) if (/\.(?:wav|json)$/.test(name)) await cp(join(voices, name), join(folder, 'build/voice', name)); } } } catch { info.log += '\n配音缓存未能回写。'; }
-      }
+    });
+    if (!task.cancelled && ['voice', 'render'].includes(info.action)) {
+      const values = await completedVoices(this.projects.engineRoot(), projectPath);
+      if (!task.cancelled && !await this.projects.persistVoices(info.projectId, task.revision!, values)) info.log += '\n项目已变化，生成的配音保留在任务副本中，未回写原项目。';
     }
     info.status = task.cancelled ? 'cancelled' : 'completed'; info.endedAt = Date.now();
     if (!task.cancelled && exporting && !(await lstat(info.output!)).isFile()) throw new Error('未生成导出文件。');

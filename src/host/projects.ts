@@ -91,7 +91,7 @@ export class Projects {
   async setup(): Promise<SetupInfo> {
     const engineRoot = this.engineRoot();
     const folderState = existsSync(this.config.libraryRoot) ? await inspectFolder(this.config.libraryRoot) : undefined;
-    return { engineRoot, engineReady: !!engineRoot, libraryRoot: this.config.libraryRoot, projects: await this.list(), missing: engineRoot ? [] : ['explainroo 引擎'], ...(folderState ? { folderState } : {}) };
+    return { engineRoot, configuredEngineRoot: this.config.engineRoot, engineReady: !!engineRoot, libraryRoot: this.config.libraryRoot, projects: await this.list(), missing: engineRoot ? [] : ['explainroo 引擎'], ...(folderState ? { folderState } : {}) };
   }
   async snapshot(folder: string): Promise<Snapshot> {
     await stableProject(folder);
@@ -121,8 +121,9 @@ export class Projects {
       workspaceSkill: await workspaceSkill(folder),
       width: project.config.width, height: project.config.height, fps: project.config.fps, theme: project.config.theme,
       appearance: { theme: project.config.look?.extends ?? project.config.theme, bg: look.bg, background: look.background, captions: project.config.captions, custom: !!Object.keys(snapshot.studio.appearance ?? {}).length },
-      voice: typeof project.config.voice === 'string' ? project.config.voice : `${project.config.voice.provider} · ${project.config.voice.id}`,
-      voiceSettings: typeof project.config.voice === 'string' ? { provider: 'kokoro', id: project.config.voice } : project.config.voice.provider !== 'recording' ? project.config.voice : undefined,
+      voice: typeof project.config.voice === 'string' ? project.config.voice : `${project.config.voice.provider} · ${project.config.voice.provider === 'recording' ? project.config.voice.src : project.config.voice.id}`,
+      voiceSettings: typeof project.config.voice === 'string' ? { provider: 'kokoro', id: project.config.voice } : project.config.voice,
+      defaultVoice: engine.LANGUAGES[project.config.language],
       language: project.config.language,
       voiceChoices: Object.entries(engine.VOICES).filter(([id]) => engine.voiceLanguage(id) === project.config.language).map(([id, label]) => ({ id, label: String(label) })),
       scenes: timeline.scenes.map((scene: any) => ({ id: scene.id, index: scene.index, text: scene.text, raw: rawSections.find(item => item.id === scene.id)?.raw ?? '', start: scene.start, duration: scene.dur, marks: scene.marks, cached: cached.has(scene.id) })),
@@ -213,8 +214,17 @@ export class Projects {
   async validate(id: string): Promise<ValidationReport> {
     const folder = await this.folder(id); await stableProject(folder);
     const engine = await engineModules(this.engineRoot());
-    if (!engine.validateProjectReferences) throw new Error('当前外部引擎缺少引用验证，请在设置中清空引擎目录以使用内置引擎。');
     return engine.validateProjectReferences(folder);
+  }
+  async persistVoices(id: string, revision: string, values: Record<string, string | Buffer>): Promise<boolean> {
+    return this.serial.run(id, async () => {
+      const folder = await this.folder(id); const snapshot = await this.snapshot(folder);
+      if (await this.revision(folder, snapshot) !== revision) return false;
+      const engine = await engineModules(this.engineRoot());
+      const guards: Record<string, string> = { ...engine.readProjectModules(folder), 'script.md': snapshot.script, 'video.json': await readFile(join(folder, 'video.json'), 'utf8') };
+      await writeProjectTransaction(folder, { ...guards, ...values }, guards);
+      return true;
+    });
   }
   async rename(request: RenameRequest): Promise<ProjectDetail> {
     return this.serial.run(request.id, async () => {
@@ -222,7 +232,6 @@ export class Projects {
       const folder = await this.folder(request.id); const previous = await this.snapshot(folder);
       if (await this.revision(folder, previous) !== request.revision) throw new Error('项目已被其他窗口或 AI 修改。请刷新后再改名。');
       const engine = await engineModules(this.engineRoot());
-      if (!engine.renameReferences) throw new Error('当前外部引擎不支持中文改名，请在设置中清空引擎目录以使用内置引擎。');
       const target = previous.studio.scenes[request.sceneId];
       if (target?.locked) throw new Error('该场景已锁定，请先手动解锁。');
       const configSource = await readFile(join(folder, 'video.json'), 'utf8'); const config = JSON.parse(configSource);

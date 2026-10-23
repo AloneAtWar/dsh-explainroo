@@ -9,8 +9,8 @@ const cssPlugin = {
 };
 const clientExternal = ['react', 'react/jsx-runtime', '@deepseek-ai/cordis', '@deepseek-ai/dsh-api-remotes/client', '@deepseek-ai/dsh-client-connection/client', '@deepseek-ai/dsh-client-locale/client', '@deepseek-ai/dsh-client-ui-workspace/client'];
 export default defineConfig([
-  { entry: { index: 'src/index.ts', 'typert.host': 'src/typert.host.ts', 'export-worker': 'src/host/export-worker.ts' }, format: 'esm', platform: 'node', target: 'es2023', outDir: 'lib', clean: false, dts: false, fixedExtension: false },
-  { entry: { frame: 'src/player/frame.ts', 'scene-adapter': 'src/shared/scene-adapter.ts' }, format: 'esm', platform: 'browser', target: 'es2022', outDir: 'lib', clean: false, dts: false, fixedExtension: false },
+  { entry: { index: 'src/index.ts', 'typert.host': 'src/typert.host.ts', 'export-worker': 'src/host/export-worker.ts', bridge: 'src/bridge.ts' }, format: 'esm', platform: 'node', target: 'es2023', outDir: 'lib', clean: false, dts: false, fixedExtension: false },
+  ...Object.entries({ frame: 'src/player/frame.ts', 'scene-adapter': 'src/shared/scene-adapter.ts' }).map(([name, path]) => ({ entry: { [name]: path }, format: 'esm' as const, platform: 'browser' as const, target: 'es2022', outDir: 'lib', clean: false, dts: false, fixedExtension: false })),
   {
     entry: { client: 'src/client/index.tsx' }, format: 'cjs', platform: 'browser', target: 'es2022', outDir: 'lib', clean: false, dts: false, fixedExtension: false,
     plugins: [cssPlugin], deps: { neverBundle: clientExternal, alwaysBundle: (id: string) => clientExternal.includes(id) ? undefined : true, onlyBundle: false },

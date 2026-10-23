@@ -2,6 +2,8 @@
 
 Independent plugin project; do not edit sibling repositories or the installed explainroo engine.
 
+Explainroo is an unmodified, commit-pinned external dependency. Keep extensions in the plugin; translate Chinese IDs only in compatibility copies. Do not reintroduce vendored engine code or install-time patches.
+
 - Use `npm ci --ignore-scripts`, Node ^22.19 or >=24. Keep DSH code in peers; compile against the pinned latest prerelease.
 - Read `docs/architecture.md` before changing the project store, native bridge, preview or export adapter. UI and tools share the Host service.
 - Keep manual edits and locks durable, reject stale revisions, preserve narration markers and other scenes.

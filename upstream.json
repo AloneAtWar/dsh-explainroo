@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/vincentsch/explainroo",
+  "commit": "e95232c8d535ed2aa390e7b1caee0d1326dd9e83",
+  "version": "0.4.1",
+  "integrityFiles": {
+    "package.json": "f73ae418e219ca4e7cdcd790e7e242a77ac1bfee8c87ad31ebc7209eb907225d",
+    "src/script.js": "550c714a1edbc28b078e20a8482a6f5b60291931683b980f64eea775eabcf0a5",
+    "src/project.js": "2e3613a8c7d650706ea05be63343faf310332446b466e46bf7d068b73f09287e",
+    "src/voice.js": "b8bd6472e5a94a5aa6f9855a9f8c1656abea938a45a4d93479dc66dea916af22",
+    "src/recordings.js": "7fa31d3ed28437a655391b87e2bb306af02d2b1b579c796cc77688d0232b1fba",
+    "src/pipeline.js": "c79cd2cc7dc2494eea8e5623cbf0d07ef15ebf237f74274f24c2d25a1da07f2e",
+    "src/render.js": "444033b50c061646bd1c1ab9a0f91b88c95afd84cc472f463c6783c3d8522bcf",
+    "src/server.js": "7b66d6a58d9051f741de223e34327ae12af1114f00b79852f450a812efb1d6b6",
+    "engine/runtime.js": "5a826663f2ff5eb9b9389715127ec3bcec0320c13ec416177e6ffc11a38612da"
+  }
+}

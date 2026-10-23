@@ -1,7 +1,7 @@
 import { cp, mkdir, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
-const source = resolve(process.argv[2] ?? 'skills/explainroo/examples/password-storage-zh');
+const source = resolve(process.argv[2] ?? 'skills/explainroo/examples/chinese-demo');
 const target = resolve('.local/projects', basename(source));
 if (existsSync(target)) throw new Error(`演示副本已存在，未覆盖：${target}`);
 if (!existsSync(join(source, 'video.json'))) throw new Error('请选择有效的 explainroo 项目。');
