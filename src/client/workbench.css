@@ -958,6 +958,49 @@
     gap: 7px;
   }
 }
+@container(max-width:470px) {
+  .er-workspace {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .er-sceneRail {
+    align-self: start;
+  }
+  .er-sceneList {
+    display: flex;
+    gap: 6px;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .er-scene {
+    flex: 0 0 112px;
+    width: 112px;
+    margin-bottom: 0;
+  }
+  .er-canvasToolbar {
+    flex-wrap: wrap;
+  }
+  .er-canvasToolbar>strong {
+    flex-basis: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .er-stage {
+    min-height: 0;
+  }
+  .er-playbar {
+    flex-wrap: wrap;
+  }
+  .er-clock {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+  .er-properties fieldset {
+    grid-template-columns: minmax(0,1fr);
+  }
+}
 .er-projectSetup {
   width: min(700px,100%);
   margin: 0 auto;
