@@ -6,7 +6,7 @@ description:
   zh: 在 DSH 原生对话中创作讲稿，逐场预览和编辑画面，并导出讲解视频或分镜图。
   en: Create scripts with DSH's native chat, preview and edit scenes, and export explainer videos or storyboards.
 screenshots:
-  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/master/.github/screenshots/workbench.jpg
-  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/master/.github/screenshots/narration.jpg
-  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/master/.github/screenshots/voice-settings.jpg
+  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/ecc0076ec820d345dbb7e567d839dbb806f4047c/.github/screenshots/workbench.jpg
+  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/ecc0076ec820d345dbb7e567d839dbb806f4047c/.github/screenshots/narration.jpg
+  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/ecc0076ec820d345dbb7e567d839dbb806f4047c/.github/screenshots/voice-settings.jpg
 tarball: https://github.com/AloneAtWar/dsh-explainroo/releases/latest/download/dsh-explainroo.tgz
