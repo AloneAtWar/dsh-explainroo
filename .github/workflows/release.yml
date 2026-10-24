@@ -23,6 +23,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run check
+      - run: node scripts/verify-committed-build.mjs
       - run: npm pack --ignore-scripts
       - name: Enforce workbench market package size limit (8 MiB)
         run: |

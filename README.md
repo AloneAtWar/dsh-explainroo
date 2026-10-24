@@ -77,6 +77,8 @@ npm pack --dry-run --ignore-scripts
 
 CI 在 Windows 和 Linux 的 Node 22 / 24 上执行完整检查与打包预检。TypeScript 同时检查未使用的声明。推送 `v*` 标签会重复完整检查后创建 GitHub Release，附上固定文件名的 `dsh-explainroo.tgz`（供 `releases/latest/download/` 链接引用）并通过 8 MiB 体积守卫；配置 `NPM_TOKEN` secret 后，Release 发布时自动执行 `npm publish --provenance`。
 
+插件自身的 `lib/` 构建产物随源码提交，供源码安装和市场源码核验使用。修改源码后运行 `npm run check`，同时提交更新后的 `lib/`；CI 和 Release 会检查重新构建的文件与提交内容一致。Explainroo 引擎继续使用固定提交的外部依赖。
+
 ## DSH 工具
 
 | 工具 | 用途 |

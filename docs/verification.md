@@ -2,6 +2,8 @@
 
 ## 0.8.2 正式 Release 与市场材料（2026-10-24）
 
+收录 PR 的目录探测通过后，安全审核发现 GitHub 源码包中缺少声明的 `lib/client.js`。正式 Release 本身包含该入口。已将与 Release 逐字节一致的插件预构建文件纳入源码仓库，并为 CI / Release 增加构建一致性检查；没有修改运行代码、安装包或外部引擎。
+
 从 Desktop 内置 CLI 卸载旧安装，再使用 `--ignore-scripts` 从正式 [v0.8.2 下载地址](https://github.com/AloneAtWar/dsh-explainroo/releases/download/v0.8.2/dsh-explainroo.tgz)安装并重启。Windows x64、Desktop 0.12.0 / Harness 0.2.0-rc.2 / 内置 Node.js 24.17.0 上，有效配置包含本插件层，原生「已安装」显示 v0.8.2，实际面板显示界面与后台均为 0.8.2、Explainroo 0.4.1 已就绪。
 
 正式资产为 412864 字节、38 个文件，SHA-256 为 `242e7705abc794d948d5ab63bf84f52fa465518e4bf344aedabc9a584d1979c1`，与 GitHub digest 一致。13 个运行文件与已检查的构建、已安装内容一致，9 个上游引擎文件哈希匹配。[Release 工作流](https://github.com/AloneAtWar/dsh-explainroo/actions/runs/40067945476)及对应提交的 Windows / Linux、Node 22 / 24 检查通过。
