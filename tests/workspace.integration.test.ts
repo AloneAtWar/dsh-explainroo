@@ -51,6 +51,22 @@ describe.skipIf(!engineRoot)('empty video workspace onboarding', () => {
     expect(await readdir(folder)).toEqual(['notes.txt']); expect(await readFile(join(folder, 'notes.txt'), 'utf8')).toBe('用户的资料');
     expect((await app.invoke('setup', {})).libraryRoot).toBe(join(root, 'not-selected'));
   });
+  it('recovers a stale custom engine with the installed default and keeps that choice automatic', async () => {
+    await app.close();
+    await mkdir(join(root, 'settings'), { recursive: true });
+    await writeFile(join(root, 'settings/settings.json'), JSON.stringify({ libraryRoot: folder, engineRoot: join(root, 'removed-engine') }));
+    app = new Workbench({ ...defaults(), libraryRoot: folder, dataDir: join(root, 'settings') }); await app.ready;
+    const broken = await app.invoke('setup', {});
+    expect(broken).toMatchObject({ engineReady: false, engine: { source: 'custom', defaultReady: true } });
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    const recovered = await app.invoke('configure', { engineRoot: '' });
+    expect(recovered).toMatchObject({ engineReady: true, configuredEngineRoot: '', engine: { source: 'dependency' } });
+    expect(recovered.pluginVersion).toBeTruthy();
+    expect(JSON.parse(await readFile(join(root, 'settings/settings.json'), 'utf8')).engineRoot).toBe('');
+    await app.invoke('configure', { libraryRoot: folder });
+    expect(JSON.parse(await readFile(join(root, 'settings/settings.json'), 'utf8')).engineRoot).toBe('');
+    expect(await readdir(folder)).toEqual([]); expect(fetch).not.toHaveBeenCalled();
+  });
   it('allows only one concurrent initialization and never replaces later creative work', async () => {
     const results = await Promise.allSettled([1, 2].map(() => app.invoke('createProject', { ...input(), folder })));
     expect(results.filter(item => item.status === 'fulfilled')).toHaveLength(1);

@@ -1,10 +1,10 @@
 import { defineConfig } from 'tsdown';
 import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 
 const cssPlugin = {
   name: 'explainroo-inline-css',
-  resolveId(id: string, importer?: string) { return /\.css(?:\?inline)?$/.test(id) ? '\0explainroo-css:' + resolve(importer ? dirname(importer) : '.', id.replace(/\?inline$/, '')) + '.mjs' : null; },
+  resolveId(id: string, importer?: string) { return /\.css(?:\?inline)?$/.test(id) ? '\0explainroo-css:' + relative(process.cwd(), resolve(importer ? dirname(importer) : '.', id.replace(/\?inline$/, ''))).replace(/\\/g, '/') + '.mjs' : null; },
   async load(id: string) { if (!id.startsWith('\0explainroo-css:')) return null; return `export default ${JSON.stringify(await readFile(id.slice('\0explainroo-css:'.length, -4), 'utf8'))};`; },
 };
 const clientExternal = ['react', 'react/jsx-runtime', '@deepseek-ai/cordis', '@deepseek-ai/dsh-api-remotes/client', '@deepseek-ai/dsh-client-connection/client', '@deepseek-ai/dsh-client-locale/client', '@deepseek-ai/dsh-client-ui-workspace/client'];

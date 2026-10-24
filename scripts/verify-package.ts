@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
 import semver from 'semver';
 import { dirname, join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { homedir } from 'node:os';
 
 const manifest = JSON.parse(await readFile('package.json', 'utf8'));
 const require = createRequire(import.meta.url);
@@ -14,6 +15,11 @@ assert(existsSync(manifest.dsh.bundle.patch));
 assert(manifest.files.includes('skills'));
 for (const path of ['SKILL.md', 'scripts/explainroo.mjs', 'references/scene-api.md', 'references/writing-and-visuals.md', 'references/storyboard-notes.md', 'examples/chinese-demo/scenes.js', 'LICENSE']) assert(existsSync(`skills/explainroo/${path}`), `missing workspace skill resource ${path}`);
 assert(existsSync('lib/export-worker.js'));
+const privateRoots = [process.cwd(), homedir()].flatMap(root => [root, root.replace(/\\/g, '/'), JSON.stringify(root).slice(1, -1)]).map(root => root.toLowerCase());
+for (const file of (await readdir('lib')).filter(file => /\.(?:[cm]?js|map)$/.test(file))) {
+  const source = (await readFile(join('lib', file), 'utf8')).toLowerCase();
+  assert(!privateRoots.some(root => source.includes(root)), `machine-specific path in lib/${file}`);
+}
 for (const file of ['scripts/validate.mjs', 'references/chinese-names.md']) assert(existsSync(`skills/explainroo/${file}`), `missing Chinese naming/validation resource ${file}`);
 assert(!existsSync('skills/explainroo/app'), 'upstream engine must be an external dependency, not vendored');
 const upstream = JSON.parse(await readFile('upstream.json', 'utf8'));
@@ -74,6 +80,6 @@ assert.equal(descriptor.repository, manifest.repository.url.replace(/^git\+/, ''
 for (const dispose of disposers.reverse()) await dispose();
 assert(!registered); assert(!remoteMounted); assert(!referencesMounted); assert.equal(mounted.length, 0);
 await mkdir('.local', { recursive: true });
-const report = { version: manifest.version, checkedAt: new Date().toISOString(), harnessTarget: '0.2.1-rc.2', desktopRuntimeRange: '0.2.0-rc.2', exports: Object.keys(manifest.exports), clientLoader: 'passed', nativeDescriptor: 'passed', effectCleanup: 'passed', nativeDesktopInstallation: 'not-assessed-by-this-script' };
+const report = { version: manifest.version, checkedAt: new Date().toISOString(), harnessTarget: '0.2.1-rc.2', desktopRuntimeRange: '0.2.0-rc.2', exports: Object.keys(manifest.exports), clientLoader: 'passed', nativeDescriptor: 'passed', effectCleanup: 'passed', machinePaths: 'passed', nativeDesktopInstallation: 'not-assessed-by-this-script' };
 await writeFile('.local/package-report.json', JSON.stringify(report, null, 2));
-console.log('Package exports, prerelease peer ranges, Host import, Client loader, Desktop descriptor and effect cleanup passed.');
+console.log('Package exports, prerelease peer ranges, Host import, Client loader, Desktop descriptor, effect cleanup and machine-path checks passed.');

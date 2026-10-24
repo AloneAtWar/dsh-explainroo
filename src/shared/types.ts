@@ -64,7 +64,8 @@ export interface EditableElement {
   visible: boolean; screen: { x: number; y: number; w: number; h: number };
 }
 export interface TaskInfo { id: string; projectId: string; action: TaskAction; status: 'running' | 'completed' | 'failed' | 'cancelled'; log: string; startedAt: number; endedAt?: number; output?: string; error?: string }
-export interface SetupInfo { engineRoot: string; configuredEngineRoot?: string; engineReady: boolean; libraryRoot: string; projects: ProjectSummary[]; missing: string[]; folderState?: FolderInspection }
+export interface EngineInstallation { root: string; source: 'dependency' | 'custom' | 'environment'; ready: boolean; defaultReady: boolean; version?: string; expectedVersion: string }
+export interface SetupInfo { pluginVersion?: string; engine?: EngineInstallation; engineRoot: string; configuredEngineRoot?: string; engineReady: boolean; libraryRoot: string; projects: ProjectSummary[]; missing: string[]; folderState?: FolderInspection }
 export interface EditRequest {
   id: string; sceneId: string; revision: string; raw?: string; note?: string; locked?: boolean;
   elementId?: string; element?: ElementOverride; origin?: 'user' | 'ai';

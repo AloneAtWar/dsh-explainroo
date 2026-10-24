@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Config } from '../config.ts';
 import type { Appearance } from '../shared/types.ts';
@@ -9,23 +8,15 @@ import { parseScript } from './compat/parser.mjs';
 import { loadProject, normalizeConfig } from './compat/config.mjs';
 import * as references from './compat/references.mjs';
 import upstream from '../../upstream.json';
+import { inspectEngine } from './engine-installation.ts';
 
 export const upstreamCommit = upstream.commit;
-const require = createRequire(import.meta.url);
-
 export function findEngine(config: Config): string {
-  const candidates = [config.engineRoot || process.env.EXPLAINROO_HOME || dirname(require.resolve('explainroo/package.json'))];
-  for (const item of candidates) {
-    if (!item) continue;
-    for (const root of [resolve(item), resolve(item, 'app')]) {
-      if (existsSync(join(root, 'src/project.js')) && existsSync(join(root, 'engine/runtime.js')) && existsSync(join(root, 'bin/explainroo.js'))) return root;
-    }
-  }
-  return '';
+  return inspectEngine(config).root;
 }
 const engines = new Map<string, Promise<Record<string, any>>>();
 export async function upstreamModules(root: string): Promise<Record<string, any>> {
-  if (!root) throw new Error('尚未找到 explainroo 引擎，请在设置中选择包含 src/、engine/ 和 bin/ 的目录。');
+  if (!root) throw new Error('Explainroo 引擎尚未就绪。请返回工作台设置查看安装与修复引导。');
   let result = engines.get(root);
   if (!result) {
     result = (async () => {

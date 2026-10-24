@@ -11,6 +11,8 @@ import { replaceScene, sections } from './script.ts';
 import { createWorkspace, createWorkspaceProject, inspectFolder, installWorkspaceSkill, workspaceSkill } from './workspace.ts';
 import { voiceSettingsSchema, type VoiceSettings } from '../shared/types.ts';
 import { stableProject, writeProjectTransaction } from './transaction.ts';
+import { engineRecoveryMessage, inspectEngine } from './engine-installation.ts';
+import { pluginVersion } from '../shared/version.ts';
 
 const emptyStudio = (): StudioState => ({ version: 1, revision: 0, stage: 'storyboard', scenes: {} });
 interface VoiceSnapshot { json: string; wavHash: string | null }
@@ -36,7 +38,8 @@ export class Projects {
     if (request.engineRoot !== undefined) {
       if (request.engineRoot && !isAbsolute(request.engineRoot)) throw new Error('引擎目录必须是绝对路径。');
       next.engineRoot = request.engineRoot;
-      if (!findEngine(next)) throw new Error('该目录不包含 explainroo 引擎。');
+      const engine = inspectEngine(next);
+      if (!engine.ready) throw new Error(engineRecoveryMessage(engine));
     }
     const setup = await new Projects(next).setup();
     await atomicWrite(join(next.dataDir, 'settings.json'), JSON.stringify({ libraryRoot: next.libraryRoot, engineRoot: next.engineRoot }, null, 2));
@@ -89,9 +92,9 @@ export class Projects {
     }));
   }
   async setup(): Promise<SetupInfo> {
-    const engineRoot = this.engineRoot();
+    const engine = inspectEngine(this.config); const engineRoot = engine.root;
     const folderState = existsSync(this.config.libraryRoot) ? await inspectFolder(this.config.libraryRoot) : undefined;
-    return { engineRoot, configuredEngineRoot: this.config.engineRoot, engineReady: !!engineRoot, libraryRoot: this.config.libraryRoot, projects: await this.list(), missing: engineRoot ? [] : ['explainroo 引擎'], ...(folderState ? { folderState } : {}) };
+    return { pluginVersion, engine, engineRoot, configuredEngineRoot: this.config.engineRoot, engineReady: engine.ready, libraryRoot: this.config.libraryRoot, projects: await this.list(), missing: engine.ready ? [] : [engineRecoveryMessage(engine)], ...(folderState ? { folderState } : {}) };
   }
   async snapshot(folder: string): Promise<Snapshot> {
     await stableProject(folder);

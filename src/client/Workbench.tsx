@@ -9,6 +9,8 @@ import workspaceCss from './workspace-ui.css?inline';
 import { ProjectPicker } from './ProjectPicker.tsx';
 import { SettingsDialog } from './SettingsDialog.tsx';
 import { ExplainrooIcon } from './ExplainrooIcon.tsx';
+import { EngineSetup } from './EngineSetup.tsx';
+import { pluginVersion } from '../shared/version.ts';
 import { referencePrompt, markerReferencePrompt, type ReferenceKind } from './reference-prompt.ts';
 import { RenameDialog } from './RenameDialog.tsx';
 import { NarrationEditor } from './InlineNarrationEditor.tsx';
@@ -108,7 +110,7 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
     catch (cause) { if (generation === navigation.current) setError(message(cause)); } finally { if (generation === navigation.current) setLoading(false); }
   }
   useEffect(() => { const tag = document.createElement('style'); tag.dataset.explainroo = 'workbench'; tag.textContent = css + workspaceCss; document.head.appendChild(tag); return () => tag.remove(); }, []);
-  useEffect(() => { let alive = true; const generation = ++navigation.current; void api.setup().then(next => { if (!alive || generation !== navigation.current) return; setSetup(next); setLibraryPath(next.libraryRoot); setEnginePath(next.engineRoot); if (next.engineReady && next.projects.length) void load(next.projects[0].id); }).catch(cause => { if (alive && generation === navigation.current) setError(message(cause)); }); return () => { alive = false; }; }, [api]);
+  useEffect(() => { let alive = true; const generation = ++navigation.current; void api.setup().then(next => { if (!alive || generation !== navigation.current) return; setSetup(next); setLibraryPath(next.libraryRoot); setEnginePath(next.configuredEngineRoot ?? ''); if (next.engineReady && next.projects.length) void load(next.projects[0].id); }).catch(cause => { if (alive && generation === navigation.current) setError(message(cause)); }); return () => { alive = false; }; }, [api]);
   useEffect(() => {
     if (!restoreFolder) { restoredFolder.current = null; return; }
     if (restoredFolder.current === restoreFolder) return;
@@ -217,9 +219,19 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
     try {
       const inspected = await api.inspectFolder({ folder: libraryPath });
       setLibraryPath(inspected.folder);
-      const next = await api.configure({ libraryRoot: inspected.folder, engineRoot: enginePath }); setSetup(next); setProject(null); setSettings(false);
+      const next = await api.configure({ libraryRoot: inspected.folder, ...(enginePath !== (setup?.configuredEngineRoot ?? '') ? { engineRoot: enginePath } : {}) }); setSetup(next); setEnginePath(next.configuredEngineRoot ?? ''); setProject(null); setSettings(false);
       const target = next.projects.find(item => item.folder === project?.folder) ?? next.projects[0];
       if (target && next.engineReady) { accept(await api.project({ id: target.id }), ''); setThumbs({}); setFrame(initialFrame); }
+    } catch (cause) { setError(message(cause)); } finally { setLoading(false); }
+  }
+  async function recheckEngine(useDefault = false) {
+    if (busy || dirty || loading) return;
+    setLoading(true); setError('');
+    try {
+      const next = useDefault ? await api.configure({ engineRoot: '' }) : await api.setup();
+      setSetup(next); setEnginePath(next.configuredEngineRoot ?? '');
+      const selected = next.projects.find(item => item.folder === project?.folder) ?? next.projects[0];
+      if (next.engineReady && selected) { accept(await api.project({ id: selected.id }), project?.folder === selected.folder ? selectedScene : ''); setThumbs({}); setFrame(initialFrame); }
     } catch (cause) { setError(message(cause)); } finally { setLoading(false); }
   }
   async function chooseFolder(which: 'library' | 'engine') {
@@ -230,9 +242,9 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
     if (!creating || dirty || busy || loading) return;
     setLoading(true); setError('');
     try {
-      if (enginePath !== setup?.engineRoot) await api.configure({ engineRoot: enginePath });
+      if (enginePath !== (setup?.configuredEngineRoot ?? '')) await api.configure({ engineRoot: enginePath });
       const result = await api.createProject({ folder: setup?.libraryRoot ?? libraryPath, directory: newDirectory, title: newTitle.trim(), theme: newTheme, size: newSize });
-      ++navigation.current; setSetup(result.setup); setLibraryPath(result.setup.libraryRoot); setEnginePath(result.setup.engineRoot);
+      ++navigation.current; setSetup(result.setup); setLibraryPath(result.setup.libraryRoot); setEnginePath(result.setup.configuredEngineRoot ?? '');
       accept(result.project, ''); setThumbs({}); setFrame(initialFrame); setSettings(false); setCreating(false); setNotice(t('projectInitialized'));
     } catch (cause) { setError(message(cause)); } finally { setLoading(false); }
   }
@@ -269,6 +281,7 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
     {error && <div className="er-toast er-toastError" role="alert">{error}<button className="er-icon" aria-label={t('close')} onClick={() => setError('')}><X size={15}/></button></div>}
     {notice && <div className="er-toast" role="status">{notice}<button className="er-icon" aria-label={t('close')} onClick={() => setNotice('')}><X size={15}/></button></div>}
     <div className="er-editorSurface">
+    {setup?.engineReady && setup.pluginVersion !== pluginVersion && !creating && <div className="er-engineNotice"><EngineSetup setup={setup} disabled={loading || busy || dirty} retry={() => void recheckEngine()} t={t}/></div>}
     {project && !creating && <div className="er-appearance" role="group" aria-label={t('appearance')}>
       <strong><Settings2 size={15}/>{t('appearance')}</strong>
       <label>{t('theme')}<select aria-label={t('theme')} value={project.appearance.theme} disabled={busy || dirty} onChange={event => void changeAppearance({ theme: event.target.value as Appearance['theme'], ...(project.studio.appearance?.captions !== undefined ? { captions: project.studio.appearance.captions } : {}) })}>{themes.map(theme => <option key={theme} value={theme}>{t(theme)}</option>)}</select></label>
@@ -280,14 +293,15 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
     {creating || !setup?.engineReady || !setup?.folderState ? <div className="er-onboarding er-projectSetup" aria-busy={loading}>
       <Clapperboard size={38}/><h1>{t(creating ? 'newProject' : 'workbenchSettings')}</h1>
       <fieldset disabled={loading || busy} className="er-setupFields">
+      {setup && <EngineSetup setup={setup} disabled={loading || busy} retry={() => void recheckEngine()} useDefault={() => void recheckEngine(true)} t={t}/>}
       <label>{t('library')}<span className="er-pathField"><input aria-label={t('library')} value={libraryPath} disabled={creating} onChange={event => setLibraryPath(event.target.value)}/>{pickDirectory && !creating && <button className="er-icon" aria-label={t('choose')} onClick={() => void chooseFolder('library')}><FolderOpen size={18}/></button>}</span></label>
       {emptyFolder ? <>
         <label>{t('projectName')}<input aria-label={t('projectName')} value={newTitle} maxLength={120} onChange={event => setNewTitle(event.target.value)}/></label>
         <label>{t('projectDirectory')}<input aria-label={t('projectDirectory')} value={newDirectory} maxLength={80} onChange={event => setNewDirectory(event.target.value)}/><small>projects/{newDirectory || '…'}/</small></label>
         <div className="er-setupOptions"><label>{t('aspectRatio')}<select aria-label={t('aspectRatio')} value={newSize} onChange={event => setNewSize(event.target.value as NewProjectRequest['size'])}><option value="youtube">16:9 · 1920 × 1080</option><option value="vertical">9:16 · 1080 × 1920</option><option value="square">1:1 · 1080 × 1080</option><option value="instagram">4:5 · 1080 × 1350</option></select></label><label>{t('theme')}<select aria-label={t('theme')} value={newTheme} onChange={event => setNewTheme(event.target.value as NewProjectRequest['theme'])}>{themes.map(theme => <option key={theme} value={theme}>{t(theme)}</option>)}</select></label></div>
       </> : null}
-      <details className="er-engineSettings" open={!setup?.engineReady}><summary>{t('engine')}</summary><label>{t('engine')}<span className="er-pathField"><input aria-label={t('engine')} value={enginePath} onChange={event => setEnginePath(event.target.value)}/>{pickDirectory && <button className="er-icon" aria-label={t('engine')} onClick={() => void chooseFolder('engine')}><FolderOpen size={18}/></button>}</span></label></details>
-      <div className="er-setupActions"><button className="er-button er-primary" disabled={loading || !libraryPath || (creating && (!newTitle.trim() || !/^[a-z0-9][a-z0-9_-]*$/i.test(newDirectory)))} onClick={() => void (creating ? initializeProject() : configure())}>{t(loading ? 'initializing' : creating ? 'initializeProject' : 'apply')}</button>{setup?.folderState && <button className="er-button" onClick={() => { setSettings(false); setCreating(false); setLibraryPath(setup?.libraryRoot ?? ''); }}>{t('back')}</button>}</div>
+      <details className="er-engineSettings"><summary>{t('advancedVoice')}</summary><label>{t('customEngine')}<span className="er-pathField"><input aria-label={t('engine')} value={enginePath} placeholder={t('engineAutomaticHint')} onChange={event => setEnginePath(event.target.value)}/>{pickDirectory && <button className="er-icon" aria-label={t('engine')} onClick={() => void chooseFolder('engine')}><FolderOpen size={18}/></button>}</span></label></details>
+      <div className="er-setupActions"><button className="er-button er-primary" disabled={loading || !libraryPath || setup?.pluginVersion !== pluginVersion || (creating && (!setup?.engineReady || !newTitle.trim() || !/^[a-z0-9][a-z0-9_-]*$/i.test(newDirectory)))} onClick={() => void (creating ? initializeProject() : configure())}>{t(loading ? 'initializing' : creating ? 'initializeProject' : 'apply')}</button>{setup?.folderState && <button className="er-button" onClick={() => { setSettings(false); setCreating(false); setLibraryPath(setup?.libraryRoot ?? ''); }}>{t('back')}</button>}</div>
       </fieldset>
     </div> : loading ? <div className="er-loading" role="status"><RefreshCw className="er-spin"/>{t('loading')}</div> : project && scene ? <>
       <div className="er-workspace">
@@ -340,9 +354,9 @@ export function Workbench({ api, pickDirectory, openConversation, restoreFolder,
     </div> : <div className="er-workspaceEmpty"><FolderOpen size={36}/><h1>{t('noProjects')}</h1><button className="er-button er-primary" onClick={() => { setNewTitle(''); setNewDirectory(`video-${Date.now().toString(36)}`); setCreating(true); }}>{t('newProject')}</button></div>}
     </div>
     {renaming && <RenameDialog kind={renaming.kind} from={renaming.from} close={() => setRenaming(null)} save={async to => { setSaving(true); try { const next = await api.rename({ id: renaming.projectId, revision: renaming.revision, sceneId: renaming.sceneId, kind: renaming.kind, from: renaming.from, to, origin: 'user' }); accept(next, renaming.kind === 'scene' ? to : renaming.sceneId); setThumbs({}); setFrame(initialFrame); setRenaming(null); setNotice(t('saved')); } finally { setSaving(false); } }} t={t}/>}
-    {settings && setup && <SettingsDialog setup={setup} project={project} disabled={busy || dirty} pickDirectory={pickDirectory} close={() => setSettings(false)} save={async value => {
+    {settings && setup && <SettingsDialog setup={setup} project={project} disabled={busy || dirty || setup.pluginVersion !== pluginVersion} pickDirectory={pickDirectory} close={() => setSettings(false)} save={async value => {
       if (value.voice && project) accept(await api.voiceSettings({ id: project.id, revision: project.revision, voice: value.voice }));
-      if (value.libraryRoot !== setup.libraryRoot || value.engineRoot !== (setup.configuredEngineRoot ?? setup.engineRoot)) { const next = await api.configure({ libraryRoot: value.libraryRoot, engineRoot: value.engineRoot }); setSetup(next); setLibraryPath(next.libraryRoot); setEnginePath(next.engineRoot); const selected = next.projects.find(item => item.folder === project?.folder) ?? next.projects[0]; if (selected && next.engineReady) accept(await api.project({ id: selected.id }), ''); else setProject(null); setThumbs({}); setFrame(initialFrame); }
+      if (value.libraryRoot !== setup.libraryRoot || value.engineRoot !== (setup.configuredEngineRoot ?? '')) { const next = await api.configure({ libraryRoot: value.libraryRoot, engineRoot: value.engineRoot }); setSetup(next); setLibraryPath(next.libraryRoot); setEnginePath(next.configuredEngineRoot ?? ''); const selected = next.projects.find(item => item.folder === project?.folder) ?? next.projects[0]; if (selected && next.engineReady) accept(await api.project({ id: selected.id }), ''); else setProject(null); setThumbs({}); setFrame(initialFrame); }
       setSettings(false); setNotice(t('saved'));
     }} t={t}/>}
     {contextMenu && <div ref={menuRoot} role="menu" className="er-contextMenu" style={{ left: contextMenu.x, top: contextMenu.y }}><button role="menuitem" onClick={() => void copyReference()}><Copy size={15}/>{contextMenu.label}</button>{['scene', 'marker'].includes(contextMenu.kind) && <button role="menuitem" title={dirty ? t('dirtyHint') : undefined} disabled={busy || dirty || !!project?.studio.scenes[contextMenu.sceneId]?.locked} onClick={() => { beginRename(contextMenu.kind === 'marker' ? 'marker' : 'scene', contextMenu.marker ?? contextMenu.sceneId, contextMenu.sceneId); setContextMenu(null); }}><Pencil size={15}/>{t(contextMenu.kind === 'marker' ? 'renameMarker' : 'renameScene')}</button>}</div>}

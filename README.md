@@ -2,6 +2,10 @@
 
 在 DSH Desktop 中制作讲解视频：用原生对话创作，在右侧工作台逐场预览、编辑，再导出视频或分镜图。
 
+![DSH Desktop 中的 Explainroo 工作台](.github/screenshots/workbench.jpg)
+
+[旁白与触发点](.github/screenshots/narration.jpg) · [原版默认配音](.github/screenshots/voice-settings.jpg) · [上架材料与待验收项](docs/market-listing.md)
+
 ## 功能
 
 - **原生对话协作**：保留 DSH 的模型、工具与会话；在输入框用 `@` 引用当前项目、场景和画面对象。
@@ -19,7 +23,7 @@
 - Node.js `^22.19.0 || >=24.0.0`。
 - Explainroo 0.4.1 通过官方仓库固定提交作为外部依赖安装；Git 仓库和插件 tgz 不包含引擎源码、字体或上游示例，首次安装需要访问该源码包地址。
 - 图形工作台依赖 DSH Desktop 的 `desktopWorkbenches` 服务。
-- 已验证 Desktop 0.11.1 / Harness 0.2.0-rc.2；开发依赖固定为 Harness 0.2.1-rc.2，peer 同时接受这两个预发布分支。
+- 当前 0.8.1 已在 Windows x64 的 Desktop 0.12.0 / Harness 0.2.0-rc.2 安装并打开验证；开发依赖固定为 Harness 0.2.1-rc.2，peer 同时接受这两个预发布分支。历史 0.7.2 另有 Desktop 0.11.1 的验收记录。
 - 导出视频需要 FFmpeg 和引擎支持的 Chrome / Edge。旁白预览不自动生成语音；中文字体首次使用可能下载。
 
 上述为已验证的版本范围。独立 Harness Web 未提供 Desktop 工作台服务时，可使用 Host 工具，不能加载本图形面板。
@@ -37,6 +41,8 @@ npm pack
 通过 DSH Desktop 支持本地文件的插件安装入口选择下载或构建得到的 tgz（Release 为固定文件名 `dsh-explainroo.tgz`，本地构建为 `dsh-explainroo-<版本>.tgz`），再重启 Harness，在工作台主页打开「讲解视频工作台」。使用 CLI 时应使用当前 Desktop 自带的运行时与 profile；全局 Harness CLI 可能安装到其他位置。
 
 首次进入设置工作台路径。默认使用固定版本的原版 Explainroo 依赖。中文 ID 和 MiMo 由插件适配；原始项目不会改成英文 ID，也不修改外部引擎。高级引擎目录仅用于自行验证过的兼容版本。
+
+安装状态会显示界面、后台和引擎版本。更新后若提示版本不一致，请用 Desktop「应用 → 重启」，仅刷新页面不会更新 Host。默认引擎随插件自动安装，不需要单独克隆 Explainroo 或填写目录；安装中断时可展开「安装与修复引导」重新安装并重启，再点「重新检测」。失效的自定义路径可用「恢复默认引擎」清除；工作台目录与视频文件保持不变。
 
 0.8.0 改变了引擎分发方式。已有项目可继续打开，锁定和历史仍保留；旧的自定义工作区 skill 不自动覆盖。旧脚本若直连旧引擎，优先使用 Host 工具，备份自定义指引后再安装新 skill。
 

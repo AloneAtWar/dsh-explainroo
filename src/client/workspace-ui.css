@@ -473,6 +473,24 @@
   font-size: 12px;
   line-height: 1.6;
 }
+.er-engineStatus {
+  padding: 14px 16px;
+  border: 1px solid var(--er-border);
+  border-radius: 8px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.er-engineStatus.needs-attention { border-color: var(--er-amber); }
+.er-engineStatus p { margin: 6px 0; color: var(--er-muted); }
+.er-engineStatus small { display: block; color: var(--er-muted); }
+.er-engineStatus details { margin-top: 10px; }
+.er-engineStatus ol { padding-left: 20px; margin: 8px 0; }
+.er-engineStatus li + li { margin-top: 6px; }
+.er-engineStatus a { color: var(--er-cyan); }
+.er-engineActions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.er-engineNotice { padding: 10px 16px; flex: none; }
 .er-settingsDialog>footer {
   display: flex;
   justify-content: flex-end;

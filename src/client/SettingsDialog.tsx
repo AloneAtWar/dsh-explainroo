@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { FolderOpen, Settings2, Volume2, X } from 'lucide-react';
 import type { ProjectDetail, SetupInfo, VoiceSettings } from '../shared/types.ts';
 import type { Translate } from './copy.ts';
+import { EngineSetup } from './EngineSetup.tsx';
 
 export function SettingsDialog({ setup, project, disabled, pickDirectory, close, save, t }: { setup: SetupInfo; project: ProjectDetail | null; disabled: boolean; pickDirectory?: () => Promise<string | null>; close: () => void; save: (value: { libraryRoot: string; engineRoot: string; voice?: VoiceSettings }) => Promise<void>; t: Translate }) {
   const [tab, setTab] = useState<'workspace' | 'voice'>('workspace');
-  const configuredEngine = setup.configuredEngineRoot ?? setup.engineRoot;
+  const configuredEngine = setup.configuredEngineRoot ?? '';
   const [libraryRoot, setLibraryRoot] = useState(setup.libraryRoot); const [engineRoot, setEngineRoot] = useState(configuredEngine);
   const [voice, setVoice] = useState<VoiceSettings>(project?.voiceSettings ?? { provider: 'kokoro', id: project?.defaultVoice ?? '' });
   const [voiceEdited, setVoiceEdited] = useState(false); const [saving, setSaving] = useState(false); const [error, setError] = useState('');
@@ -33,7 +34,7 @@ export function SettingsDialog({ setup, project, disabled, pickDirectory, close,
     <header><h2>{t('workbenchSettings')}</h2><button className="er-icon" aria-label={t('close')} disabled={saving} onClick={close}><X size={18}/></button></header>
     <div className="er-settingsTabs" role="tablist" aria-label={t('settings')}><button role="tab" aria-selected={tab === 'workspace'} onClick={() => setTab('workspace')}><Settings2 size={15}/>{t('workspaceTab')}</button><button role="tab" aria-selected={tab === 'voice'} disabled={!project} onClick={() => setTab('voice')}><Volume2 size={15}/>{t('voiceTab')}</button></div>
     <div className="er-settingsBody"><fieldset disabled={saving || disabled}>
-      {tab === 'workspace' ? <><label>{t('library')}<span className="er-pathField"><input aria-label={t('library')} value={libraryRoot} onChange={event => setLibraryRoot(event.target.value)}/>{pickDirectory && <button className="er-icon" aria-label={t('choose')} onClick={() => void choose('workspace')}><FolderOpen size={18}/></button>}</span></label><details><summary>{t('advancedVoice')}</summary><label>{t('engine')}<span className="er-pathField"><input aria-label={t('engine')} value={engineRoot} onChange={event => setEngineRoot(event.target.value)}/>{pickDirectory && <button className="er-icon" aria-label={t('engine')} onClick={() => void choose('engine')}><FolderOpen size={18}/></button>}</span></label></details></> : <>
+      {tab === 'workspace' ? <><EngineSetup setup={setup} t={t}/><label>{t('library')}<span className="er-pathField"><input aria-label={t('library')} value={libraryRoot} onChange={event => setLibraryRoot(event.target.value)}/>{pickDirectory && <button className="er-icon" aria-label={t('choose')} onClick={() => void choose('workspace')}><FolderOpen size={18}/></button>}</span></label><details><summary>{t('advancedVoice')}</summary><label>{t('customEngine')}<span className="er-pathField"><input aria-label={t('engine')} value={engineRoot} placeholder={t('engineAutomaticHint')} onChange={event => setEngineRoot(event.target.value)}/>{pickDirectory && <button className="er-icon" aria-label={t('engine')} onClick={() => void choose('engine')}><FolderOpen size={18}/></button>}</span></label></details></> : <>
         <div className="er-settingsProject">{project?.title}</div>
         <p className="er-settingsHint">{t('voiceSettingsHint')}</p>
         <label>{t('voiceProvider')}<select aria-label={t('voiceProvider')} value={voice.provider} onChange={event => {

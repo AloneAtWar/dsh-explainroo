@@ -1,0 +1,12 @@
+url: https://github.com/AloneAtWar/dsh-explainroo
+name: Explainroo 讲解视频工作台
+nameEn: Explainroo Video Workbench
+category: content
+description:
+  zh: 在 DSH 原生对话中创作讲稿，逐场预览和编辑画面，并导出讲解视频或分镜图。
+  en: Create scripts with DSH's native chat, preview and edit scenes, and export explainer videos or storyboards.
+screenshots:
+  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/master/.github/screenshots/workbench.jpg
+  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/master/.github/screenshots/narration.jpg
+  - https://raw.githubusercontent.com/AloneAtWar/dsh-explainroo/master/.github/screenshots/voice-settings.jpg
+tarball: https://github.com/AloneAtWar/dsh-explainroo/releases/download/v0.8.1/dsh-explainroo.tgz
