@@ -1,5 +1,15 @@
 # 验证
 
+## 0.8.1 正式 Release 复装（2026-10-24）
+
+[v0.8.1](https://github.com/AloneAtWar/dsh-explainroo/releases/tag/v0.8.1) 对应提交 `1dd2846b931ed1cee35e27621fb5c49f0610c9c6`。[发布工作流](https://github.com/AloneAtWar/dsh-explainroo/actions/runs/40063256897)成功；该提交的 Windows / Linux、Node 22 / 24 检查均通过。
+
+从正式 [Release 下载地址](https://github.com/AloneAtWar/dsh-explainroo/releases/download/v0.8.1/dsh-explainroo.tgz)下载并校验资产：411481 字节、38 个文件，SHA-256 为 `c70f8cfaf154af8c39112e77f0768aafcf204ff5bf65fd6cee9d83521f778605`，与 GitHub 的资产 digest 一致。包内 13 个运行文件与本机已检查构建逐一匹配，不包含私有目录、环境文件、媒体或本机路径。
+
+使用当前 Desktop 内置 CLI 从该 HTTPS 地址安装，保留 `--ignore-scripts`，再通过 Desktop 重启后台。Windows x64、Desktop 0.12.0 上实际打开原生工作台，界面与后台均为 0.8.1，Explainroo 为 0.4.1，状态为引擎已就绪。已安装的 13 个运行文件与下载包一致，外部引擎的 9 个上游文件哈希匹配。原有 12 场项目和 MiMo 配置继续显示，未生成配音或自动发送消息。
+
+三张公开截图的原始 HTTPS 地址均返回 200、`image/jpeg`，长度与仓库文件一致。包验证报告与本机安装截图保存在忽略的 `.local/release-0.8.1/`。本记录只补齐正式来源复装证据，不把尚未完成的市场原生自测记为通过。
+
 ## 0.8.1 安装引导与原生 Desktop（2026-10-24）
 
 `npm run check` 通过 19 个测试文件、102 项测试，以及类型、构建和打包检查。新增测试覆盖默认依赖发现、依赖缺失的修复说明、失效的自定义目录、环境变量与旧版 `app/` 目录、界面与后台版本不一致提示，以及恢复默认依赖后设置的持久化。
