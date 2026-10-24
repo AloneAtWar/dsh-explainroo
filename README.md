@@ -4,7 +4,7 @@
 
 ![DSH Desktop 中的 Explainroo 工作台](.github/screenshots/workbench.jpg)
 
-[旁白与触发点](.github/screenshots/narration.jpg) · [原版默认配音](.github/screenshots/voice-settings.jpg) · [上架材料与待验收项](docs/market-listing.md)
+[旁白与触发点](.github/screenshots/narration.jpg) · [原版默认配音](.github/screenshots/voice-settings.jpg) · [上架材料与验收记录](docs/market-listing.md)
 
 ## 功能
 
